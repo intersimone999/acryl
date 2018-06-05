@@ -64,9 +64,9 @@ public class AndroidApiExtractor extends CommonRunner {
         }
 
         try (PrintWriter writer = new PrintWriter(outputFile)) {
-            writer.println("api\ttimes");
+            writer.println("app\tversion\tapi\ttimes");
             for (Map.Entry<String, Integer> entry : data.entrySet()) {
-                writer.println(entry.getKey() + "\t" + entry.getValue());
+                writer.println(appName + "\t" + appVersion + "\t" + entry.getKey() + "\t" + entry.getValue());
             }
         }
     }
