@@ -12,6 +12,7 @@ import it.unimol.sdkanalyzer.rules.detectors.comparison.WrongCheckDetector;
 import it.unimol.sdkanalyzer.rules.detectors.forward.ForwardCompatibilityBadSmellDetector;
 import it.unimol.sdkanalyzer.rules.detectors.forward.ForwardCompatibilityBugDetector;
 import it.unimol.sdkanalyzer.rules.detectors.forward.ForwardCompatibilityImprovementDetector;
+import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -49,7 +50,7 @@ public class CombinedViolationDetector {
                 VersionChecker ruleCheck = rule.getChecker().copy();
                 Collection<String> alternativeApis;
                 Collection<String> matchedApis;
-                if (apisInCode.containsAll(rule.getFalseApis()) && !apisInCode.containsAll(rule.getTrueApis())) {
+                if (apisInCode.containsAll(rule.getFalseApis()) && rule.getFalseApis().size() > 0) {
                     ruleCheck.invertComparator(true);
 
                     alternativeApis = rule.getTrueApis();
@@ -59,8 +60,7 @@ public class CombinedViolationDetector {
                     matchedApis     = rule.getTrueApis();
                 }
 
-                if (alternativeApis.size() == 1 && alternativeApis.contains(""))
-                    alternativeApis.remove("");
+                assert matchedApis.size() > 0;
 
                 return detector.buildReport(rule, ruleCheck, codeCheck, matchedApis, alternativeApis);
             }
@@ -238,6 +238,9 @@ public class CombinedViolationDetector {
         private String message;
         private double confidence;
         private Collection<String> ruleApisMismatch;
+        private MethodContext methodContext;
+        private int minLine;
+        private int maxLine;
 
         public RuleViolationReport(RuleViolation violation, String message, double confidence, Collection<String> ruleApisMismatch) {
             this.violation  = violation;
@@ -268,6 +271,47 @@ public class CombinedViolationDetector {
 
         public void setRuleApisMismatch(Collection<String> ruleApisMismatch) {
             this.ruleApisMismatch = ruleApisMismatch;
+        }
+
+        public int getViolationPriority() {
+            int priority;
+            if (this.getViolation().toString().endsWith("CriticalBug"))
+                priority = 0;
+            else if (this.getViolation().toString().endsWith("BadSmell"))
+                priority = 2;
+            else if (this.getViolation().toString().endsWith("Improvement"))
+                priority = 4;
+            else
+                priority = 8;
+
+            if (this.getViolation().toString().startsWith("Backward"))
+                priority += 1;
+
+            return priority;
+        }
+
+        public int getMinLine() {
+            return minLine;
+        }
+
+        public void setMinLine(int minLine) {
+            this.minLine = minLine;
+        }
+
+        public int getMaxLine() {
+            return maxLine;
+        }
+
+        public void setMaxLine(int maxLine) {
+            this.maxLine = maxLine;
+        }
+
+        public MethodContext getMethodContext() {
+            return methodContext;
+        }
+
+        public void setMethodContext(MethodContext methodContext) {
+            this.methodContext = methodContext;
         }
     }
 

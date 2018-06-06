@@ -74,80 +74,102 @@ public class Detector extends CommonRunner {
         CombinedViolationDetector detector = new CombinedViolationDetector(apk, apiLifetime);
 
         System.out.println("Starting analysis...");
+        VersionDependentInstructionsExtractor dependentInstructionsExtractor = new VersionDependentInstructionsExtractor(cache);
+
+
+        List<CombinedViolationDetector.RuleViolationReport> allReports = new ArrayList<>();
+
+        for (IClass iClass : apkContext.getClassesInJar(false)) {
+            ClassContext classContext = apkContext.resolveClassContext(iClass);
+
+            for (IMethod iMethod : classContext.getNonAbstractMethods()) {
+                MethodContext methodContext = classContext.resolveMethodContext(iMethod);
+                methodContext.getAugmentedSymbolTable().update(cache);
+
+                Map<VersionChecker, SubCFG> versionDependentParts = dependentInstructionsExtractor.extractAllSubCFGs(methodContext);
+
+                if (versionDependentParts == null)
+                    continue;
+
+                for (Map.Entry<VersionChecker, SubCFG> entry : versionDependentParts.entrySet()) {
+                    IPCFG ipcfg = IPCFG.buildIPCFG(apkContext, entry.getValue());
+                    entry.getValue().setMethodContext(methodContext);
+
+                    Collection<String> apis = ipcfg.getCalledAPIs("android");
+                    List<CombinedViolationDetector.RuleViolationReport> reports = new ArrayList<>();
+                    for (Rule rule : ruleset.matchingRules(apis)) {
+                        CombinedViolationDetector.RuleViolationReport report = detector.violatesRule(entry.getKey(), rule, apis);
+                        if (report != null)
+                            reports.add(report);
+                    }
+
+                    CombinedViolationDetector.RuleViolationReport bestReport = reports.stream().min((v1, v2) -> {
+                        int firstComparison = v1.getViolation().compareTo(v2.getViolation());
+                        if (firstComparison != 0)
+                            return firstComparison;
+                        else
+                            return -Double.compare(v1.getConfidence(), v2.getConfidence());
+                    }).orElse(null);
+
+                    if (bestReport != null) {
+                        bestReport.setMethodContext(methodContext);
+                        bestReport.setMinLine(entry.getValue().getMinLine());
+                        bestReport.setMaxLine(entry.getValue().getMaxLine());
+
+                        allReports.add(bestReport);
+                    }
+                }
+            }
+        }
+
+        allReports.sort((r1, r2) -> {
+            int order = Integer.compare(r1.getViolationPriority(), r2.getViolationPriority());
+
+            if (order == 0) {
+                order = -Double.compare(r1.getConfidence(), r2.getConfidence());
+            }
+
+            return order;
+        });
+
+
         try (PrintWriter writer = new PrintWriter(outputFile)) {
             writer.println("app\tversion\tsdk_min\tsdk_trg\tmethod\tfromLine\ttoLine\tapis\twarning\tmessage\tconfidence");
 
-            VersionDependentInstructionsExtractor dependentInstructionsExtractor = new VersionDependentInstructionsExtractor(cache);
+            for (CombinedViolationDetector.RuleViolationReport report : allReports) {
+                //For each report...
+                writer.print(appName);
+                writer.print("\t");
 
+                writer.print(appVersion);
+                writer.print("\t");
 
-            for (IClass iClass : apkContext.getClassesInJar(false)) {
-                ClassContext classContext = apkContext.resolveClassContext(iClass);
+                writer.print(appSdkMin);
+                writer.print("\t");
 
-                for (IMethod iMethod : classContext.getNonAbstractMethods()) {
-                    MethodContext methodContext = classContext.resolveMethodContext(iMethod);
-                    methodContext.getAugmentedSymbolTable().update(cache);
+                writer.print(appSdkTrg);
+                writer.print("\t");
 
-                    Map<VersionChecker, SubCFG> versionDependentParts = dependentInstructionsExtractor.extractAllSubCFGs(methodContext);
+                writer.print(report.getMethodContext().getIMethod().getSignature());
+                writer.print("\t");
 
-                    if (versionDependentParts == null)
-                        continue;
+                writer.print(report.getMinLine());
+                writer.print("\t");
 
-                    for (Map.Entry<VersionChecker, SubCFG> entry : versionDependentParts.entrySet()) {
-                        IPCFG ipcfg = IPCFG.buildIPCFG(apkContext, entry.getValue());
-                        entry.getValue().setMethodContext(methodContext);
+                writer.print(report.getMaxLine());
+                writer.print("\t");
 
-                        Collection<String> apis = ipcfg.getCalledAPIs("android");
-                        List<CombinedViolationDetector.RuleViolationReport> reports = new ArrayList<>();
-                        for (Rule rule : ruleset.matchingRules(apis)) {
-                            CombinedViolationDetector.RuleViolationReport report = detector.violatesRule(entry.getKey(), rule, apis);
-                            if (report != null)
-                                reports.add(report);
-                        }
+                writer.print(StringUtils.join(report.getRuleApisMismatch(), "&"));
+                writer.print("\t");
 
-                        CombinedViolationDetector.RuleViolationReport bestReport = reports.stream().min((v1, v2) -> {
-                            int firstComparison = v1.getViolation().compareTo(v2.getViolation());
-                            if (firstComparison != 0)
-                                return firstComparison;
-                            else
-                                return -Double.compare(v1.getConfidence(), v2.getConfidence());
-                        }).orElse(null);
+                writer.print(report.getViolation().toString());
+                writer.print("\t");
 
-                        if (bestReport != null) {
-                            writer.print(appName);
-                            writer.print("\t");
+                writer.print("\"" + report.getMessage() + "\"");
+                writer.print("\t");
 
-                            writer.print(appVersion);
-                            writer.print("\t");
-
-                            writer.print(appSdkMin);
-                            writer.print("\t");
-
-                            writer.print(appSdkTrg);
-                            writer.print("\t");
-
-                            writer.print(methodContext.getIMethod().getSignature());
-                            writer.print("\t");
-
-                            writer.print(entry.getValue().getMinLine());
-                            writer.print("\t");
-
-                            writer.print(entry.getValue().getMaxLine());
-                            writer.print("\t");
-
-                            writer.print(StringUtils.join(bestReport.getRuleApisMismatch(), "&"));
-                            writer.print("\t");
-
-                            writer.print(bestReport.getViolation().toString());
-                            writer.print("\t");
-
-                            writer.print("\"" + bestReport.getMessage() + "\"");
-                            writer.print("\t");
-
-                            writer.print(bestReport.getConfidence());
-                            writer.print("\n");
-                        }
-                    }
-                }
+                writer.print(report.getConfidence());
+                writer.print("\n");
             }
         }
         System.out.println("All done!");

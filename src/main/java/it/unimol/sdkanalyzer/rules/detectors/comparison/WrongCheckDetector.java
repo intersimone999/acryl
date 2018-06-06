@@ -8,6 +8,8 @@ import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static it.unimol.sdkanalyzer.analysis.VersionChecker.Comparator.*;
 
@@ -25,8 +27,12 @@ public class WrongCheckDetector extends SingleRuleViolationDetector {
         if (codeCheck == null)
             return false;
 
-        if (apisInCode.containsAll(rule.getFalseApis()) && !apisInCode.containsAll(rule.getTrueApis()))
+        if (apisInCode.containsAll(rule.getFalseApis()) && rule.getFalseApis().size() > 0) {
             ruleCheck.invertComparator(true);
+        } else {
+            if (rule.getTrueApis().size() == 0)
+                return false;
+        }
 
         boolean shouldBeUsedInNewVersions   = ruleCheck.getComparator().equals(GE) || ruleCheck.getComparator().equals(GT);
         boolean shouldBeUsedInOldVersions   = ruleCheck.getComparator().equals(LE) || ruleCheck.getComparator().equals(LT);
@@ -38,8 +44,16 @@ public class WrongCheckDetector extends SingleRuleViolationDetector {
 
         if (shouldBeUsedInExactVersions != actuallyUsedInExactVersions ||
                 shouldBeUsedInOldVersions != actuallyUsedInOldVersions ||
-                shouldBeUsedInNewVersions != actuallyUsedInNewVersions)
-            return true;
+                shouldBeUsedInNewVersions != actuallyUsedInNewVersions) {
+            Logger.getAnonymousLogger().log(
+                    Level.WARNING,
+                    "There was a strange check in the app: " +
+                            codeCheck.toString() +
+                            " instead of " +
+                            ruleCheck.toString()
+            );
+            return false;
+        }
 
         int ruleCheckedVersion = ruleCheck.getCheckedVersion();
         int codeCheckedVersion = codeCheck.getCheckedVersion();
@@ -61,15 +75,15 @@ public class WrongCheckDetector extends SingleRuleViolationDetector {
                     codeCheckedVersion++;
                     break;
                 default:
-                    assert false : "This should not be possible";
-                    return true;
+                    Logger.getAnonymousLogger().log(
+                            Level.SEVERE,
+                            "There was a severe issue with WrongCheckDetector. Skipping..."
+                    );
+                    return false;
             }
         }
 
-        if (ruleCheckedVersion != codeCheckedVersion)
-            return true;
-
-        return false;
+        return ruleCheckedVersion != codeCheckedVersion;
     }
 
     public CombinedViolationDetector.RuleViolationReport buildReport(
@@ -79,23 +93,23 @@ public class WrongCheckDetector extends SingleRuleViolationDetector {
             Collection<String> usedApis,
             Collection<String> alternativeApis
     ) {
-        boolean shouldBeUsedInNewVersions  = checkToImplement.getComparator().equals(GE) || checkToImplement.getComparator().equals(GT);
-        boolean shouldBeUsedInOldVersions  = checkToImplement.getComparator().equals(LE) || checkToImplement.getComparator().equals(LT);
-        boolean shouldBeUsedInExactVersons = checkToImplement.getComparator().equals(EQ) || checkToImplement.getComparator().equals(NE);
+//        boolean shouldBeUsedInNewVersions  = checkToImplement.getComparator().equals(GE) || checkToImplement.getComparator().equals(GT);
+//        boolean shouldBeUsedInOldVersions  = checkToImplement.getComparator().equals(LE) || checkToImplement.getComparator().equals(LT);
+//        boolean shouldBeUsedInExactVersons = checkToImplement.getComparator().equals(EQ) || checkToImplement.getComparator().equals(NE);
+//
+//        boolean actuallyUsedInNewVersions   = actualCheck.getComparator().equals(GE) || actualCheck.getComparator().equals(GT);
+//        boolean actuallyUsedInOldVersions   = actualCheck.getComparator().equals(LE) || actualCheck.getComparator().equals(LT);
+//        boolean actuallyUsedInExactVersions = actualCheck.getComparator().equals(EQ) || actualCheck.getComparator().equals(NE);
 
-        boolean actuallyUsedInNewVersions   = actualCheck.getComparator().equals(GE) || actualCheck.getComparator().equals(GT);
-        boolean actuallyUsedInOldVersions   = actualCheck.getComparator().equals(LE) || actualCheck.getComparator().equals(LT);
-        boolean actuallyUsedInExactVersions = actualCheck.getComparator().equals(EQ) || actualCheck.getComparator().equals(NE);
-
-        if (shouldBeUsedInExactVersons != actuallyUsedInExactVersions ||
-                shouldBeUsedInOldVersions != actuallyUsedInOldVersions ||
-                shouldBeUsedInNewVersions != actuallyUsedInNewVersions)
-            return new CombinedViolationDetector.RuleViolationReport(
-                    CombinedViolationDetector.RuleViolation.WrongCheck,
-                    String.format(MESSAGE_WCHECK, actualCheck.toString(), checkToImplement.toString()),
-                    rule.getConfidence(),
-                    usedApis
-            );
+//        if (shouldBeUsedInExactVersons != actuallyUsedInExactVersions ||
+//                shouldBeUsedInOldVersions != actuallyUsedInOldVersions ||
+//                shouldBeUsedInNewVersions != actuallyUsedInNewVersions)
+//            return new CombinedViolationDetector.RuleViolationReport(
+//                    CombinedViolationDetector.RuleViolation.WrongCheck,
+//                    String.format(MESSAGE_WCHECK, actualCheck.toString(), checkToImplement.toString()),
+//                    rule.getConfidence(),
+//                    usedApis
+//            );
 
         int ruleCheckedVersion = checkToImplement.getCheckedVersion();
         int codeCheckedVersion = actualCheck.getCheckedVersion();
@@ -116,14 +130,6 @@ public class WrongCheckDetector extends SingleRuleViolationDetector {
                 case LE:
                     codeCheckedVersion++;
                     break;
-                default:
-                    assert false : "This should not be possible";
-                    return new CombinedViolationDetector.RuleViolationReport(
-                        CombinedViolationDetector.RuleViolation.WrongCheck,
-                        "Unexpected report.",
-                        -100,
-                        usedApis
-                    );
             }
         }
 

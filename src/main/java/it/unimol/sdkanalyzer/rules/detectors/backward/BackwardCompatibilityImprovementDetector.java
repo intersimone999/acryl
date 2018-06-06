@@ -24,6 +24,9 @@ public class BackwardCompatibilityImprovementDetector extends SingleRuleViolatio
 
     @Override
     public boolean violatesRule(ApkContainer apk, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) throws IOException {
+        if (rule.getFalseApis().size() == 0)
+            return false;
+
         if (!apisInCode.containsAll(rule.getFalseApis()))
             return false;
 

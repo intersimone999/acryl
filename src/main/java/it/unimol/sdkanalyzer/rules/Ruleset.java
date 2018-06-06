@@ -91,6 +91,12 @@ public class Ruleset {
                 Collection<String> trueApisSeq  = new HashSet<>(Arrays.asList(trueApis.split("&")));
                 Collection<String> falseApisSeq = new HashSet<>(Arrays.asList(falseApis.split("&")));
 
+                if (trueApisSeq.size() == 1 && trueApisSeq.contains(""))
+                    trueApisSeq.remove("");
+
+                if (falseApisSeq.size() == 1 && falseApisSeq.contains(""))
+                    falseApisSeq.remove("");
+
                 Rule rule = new Rule(versionChecker, trueApisSeq, falseApisSeq);
                 rule.setConfidence(reliability);
 
