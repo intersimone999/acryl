@@ -1,0 +1,78 @@
+package it.unimol.sdkanalyzer.rules.detectors.forward;
+
+import it.unimol.sdkanalyzer.analysis.VersionChecker;
+import it.unimol.sdkanalyzer.android.ApkContainer;
+import it.unimol.sdkanalyzer.lifetime.APILife;
+import it.unimol.sdkanalyzer.lifetime.APILifetime;
+import it.unimol.sdkanalyzer.rules.Rule;
+import it.unimol.sdkanalyzer.rules.CombinedViolationDetector;
+import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.IOException;
+import java.util.Collection;
+
+/**
+ * @author Simone Scalabrino.
+ */
+public class ForwardCompatibilityBugDetector extends SingleRuleViolationDetector {
+    private static final String MESSAGE = "You must use this APIs differently from SDK version %d. Add a check and handle with: %s";
+    private final APILifetime apiLifetime;
+
+    public ForwardCompatibilityBugDetector(APILifetime apiLifetime) {
+        this.apiLifetime = apiLifetime;
+    }
+
+    @Override
+    public boolean violatesRule(ApkContainer apk, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) throws IOException {
+        if (!apisInCode.containsAll(rule.getTrueApis()))
+            return false;
+
+        if (codeCheck != null)
+            return false;
+
+        for (String api : rule.getTrueApis()) {
+            APILife apiLife = this.apiLifetime.getLifeFor(api);
+
+            if (apiLife.getMaxVersion() != -1)
+                return true;
+        }
+
+        return false;
+    }
+
+    public CombinedViolationDetector.RuleViolationReport buildReport(
+            Rule rule,
+            VersionChecker checkToImplement,
+            VersionChecker actualCheck,
+            Collection<String> usedApis,
+            Collection<String> alternativeApis
+    ) {
+        String alternativeApisString = StringUtils.join(alternativeApis, " --- ");
+        StringBuilder messageBuilder = new StringBuilder("[Critical] ");
+        if (alternativeApis.containsAll(usedApis)) {
+            // Wrong Contextual Usage
+
+            messageBuilder.append("The APIs you are using must be used in a different way in newer Android releases(")
+                    .append(checkToImplement.getInverse(true).toString())
+                    .append("). ")
+                    .append("Consider using: ")
+                    .append(alternativeApisString)
+                    .append(".");
+        } else if (alternativeApis.size() == 0) {
+            // Case of Version-Specific Control
+            messageBuilder.append("The APIs you are using must be used only in older Android versions (")
+                    .append(checkToImplement.toString())
+                    .append("). ")
+                    .append("Add a check.");
+        } else {
+            messageBuilder.append(String.format(MESSAGE, checkToImplement.getCheckedVersion(), alternativeApisString));
+        }
+        return new CombinedViolationDetector.RuleViolationReport(
+                CombinedViolationDetector.RuleViolation.ForwardCriticalBug,
+                messageBuilder.toString(),
+                rule.getConfidence(),
+                usedApis
+        );
+    }
+}

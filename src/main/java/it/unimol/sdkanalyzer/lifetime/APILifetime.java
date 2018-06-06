@@ -1,34 +1,48 @@
 package it.unimol.sdkanalyzer.lifetime;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * @author Simone Scalabrino.
  */
-public class APILifetimeImporter {
-    private static final APILifetimeImporter instance = new APILifetimeImporter();
+public class APILifetime {
+    private Map<String, APILife> lifeMap;
 
-    public static APILifetimeImporter getInstance() {
-        return instance;
+    public APILifetime(Map<String, APILife> lifeMap) {
+        this.lifeMap = lifeMap;
     }
 
-    private APILifetimeImporter() {
+    public APILife getLifeFor(String signature) {
+        if (this.lifeMap.containsKey(signature))
+            return this.lifeMap.get(signature);
+        else
+            return new APILife(signature, 0, -1);
     }
 
-    public List<APILife> load(String fileName) throws IOException {
-        List<APILife> result = new ArrayList<>();
+    public int size() {
+        return this.lifeMap.size();
+    }
+
+    public static APILifetime load(File file) throws IOException {
+        Map<String, APILife> result = new HashMap<>();
         Pattern pattern = Pattern.compile("<(.*): ([^ ]+) ([^(]+)\\(([^)]*)\\)>:\\[([0-9]+),([0-9]+)\\]");
 
+        Map<String, List<String>> spurious = new HashMap<>();
+
         int lineNumber = 0;
-        for (String line : Files.readAllLines(Paths.get(fileName))) {
+        for (String line : FileUtils.readLines(file, "UTF-8")) {
             lineNumber++;
 
             Matcher matcher = pattern.matcher(line);
@@ -47,6 +61,8 @@ public class APILifetimeImporter {
             if (maxSdk == 25)
                 maxSdk = -1;
 
+            assert maxSdk != 0;
+
             StringBuilder signatureBuilder = new StringBuilder();
             for (String parameter : methodParameters.split(",")) {
                 if (parameter.length() > 0)
@@ -56,13 +72,25 @@ public class APILifetimeImporter {
 
             String walaMethodSignature = className + "." + methodSignature + "(" + signatureBuilder.toString() + ")" + returnType;
 
-            result.add(new APILife(walaMethodSignature, minSdk, maxSdk));
+            if (result.containsKey(walaMethodSignature)) {
+                if (!spurious.containsKey(walaMethodSignature))
+                    spurious.put(walaMethodSignature, new ArrayList<>());
+
+                spurious.get(walaMethodSignature).add(line);
+            }
+//            assert !result.containsKey(walaMethodSignature);
+            result.put(walaMethodSignature, new APILife(walaMethodSignature, minSdk, maxSdk));
         }
 
-        return result;
+        for (String walaMethodToRemove : spurious.keySet()) {
+            result.remove(walaMethodToRemove);
+            System.err.println("[Info] Removing spurious signature: " + walaMethodToRemove + " for " + spurious.get(walaMethodToRemove));
+        }
+
+        return new APILifetime(result);
     }
 
-    private String transformClass(String classIdentifier, boolean voidAllowed) {
+    private static String transformClass(String classIdentifier, boolean voidAllowed) {
         int arrays = 0;
         while (classIdentifier.contains("[]")) {
             classIdentifier = classIdentifier.replace("[]", "");
@@ -77,7 +105,7 @@ public class APILifetimeImporter {
             case "long":
                 return arraysString+"J";
             case "boolean":
-                return arraysString+"I";
+                return arraysString+"Z";
             case "double":
                 return arraysString+"D";
             case "float":
