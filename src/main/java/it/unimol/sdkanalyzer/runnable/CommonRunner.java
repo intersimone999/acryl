@@ -10,7 +10,6 @@ import it.unimol.sdkanalyzer.static_analysis.contexts.JarContext;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.logging.Logger;
 
@@ -65,9 +64,9 @@ public class CommonRunner {
         }
 
         apkContext = GlobalContext.getAndroidContext(jarFile.getAbsolutePath(), new File[] {
-                new File(AndroidToolkit.getAndroisSDK(), "android.jar"),
-                new File(AndroidToolkit.getAndroisSDK(), "uiautomator.jar")
+                new File(AndroidToolkit.getAndroidSDK(), "android.jar"),
+                new File(AndroidToolkit.getAndroidSDK(), "uiautomator.jar")
         });
-        apkContext.warmup();
+        apkContext.warmUp();
     }
 }

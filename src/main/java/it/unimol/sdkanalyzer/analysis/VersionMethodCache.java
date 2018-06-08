@@ -15,8 +15,8 @@ import java.util.Map;
  * @author Simone Scalabrino.
  */
 public class VersionMethodCache implements IVersionMethodCache {
-    private Map<String, SDKInfo> cache;
-    private JarContext context;
+    private final Map<String, SDKInfo> cache;
+    private final JarContext context;
 
     public VersionMethodCache(JarContext context) {
         this.cache = new HashMap<>();

@@ -4,9 +4,9 @@ package it.unimol.sdkanalyzer.lifetime;
  * @author Simone Scalabrino.
  */
 public class APILife {
-    private String signature;
-    private int minVersion;
-    private int maxVersion;
+    private final String signature;
+    private final int minVersion;
+    private final int maxVersion;
 
     public APILife(String signature, int minVersion, int maxVersion) {
         this.signature = signature;

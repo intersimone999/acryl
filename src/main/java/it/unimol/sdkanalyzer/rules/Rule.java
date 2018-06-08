@@ -10,9 +10,9 @@ import java.util.Set;
  * @author Simone Scalabrino.
  */
 public class Rule {
-    private VersionChecker checker;
-    private Collection<String> trueApis;
-    private Collection<String> falseApis;
+    private final VersionChecker checker;
+    private final Collection<String> trueApis;
+    private final Collection<String> falseApis;
     private double confidence;
 
     public Rule(VersionChecker checker, Collection<String> trueApis, Collection<String> falseApis) {

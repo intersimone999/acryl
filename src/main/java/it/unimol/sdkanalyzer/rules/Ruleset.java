@@ -18,8 +18,8 @@ import java.util.logging.Logger;
  * @author Simone Scalabrino.
  */
 public class Ruleset {
-    private HashMap<String, Set<Rule>> hashMap;
-    private Set<Rule> rules;
+    private final HashMap<String, Set<Rule>> hashMap;
+    private final Set<Rule> rules;
 
     public Ruleset(File file, int minApps, double minConfidence) throws IOException {
         this();

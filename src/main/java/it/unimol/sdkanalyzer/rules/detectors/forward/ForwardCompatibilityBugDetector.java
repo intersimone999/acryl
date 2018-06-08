@@ -10,7 +10,6 @@ import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
 import java.util.Collection;
 
 /**

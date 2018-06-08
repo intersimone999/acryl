@@ -21,12 +21,12 @@ import java.util.*;
  * @author Simone Scalabrino.
  */
 public class IPCFG extends DefaultDirectedGraph<InternalBlock, DefaultEdge> {
-    private JarContext context;
+    private final JarContext context;
     private InternalBlock head;
     private InternalBlock tail;
-    private boolean interProcedural;
+    private final boolean interProcedural;
 
-    private Map<String, InternalBlock> includedMethods;
+    private final Map<String, InternalBlock> includedMethods;
 
     public IPCFG(JarContext context, boolean interProcedural) {
         super(DefaultEdge.class);

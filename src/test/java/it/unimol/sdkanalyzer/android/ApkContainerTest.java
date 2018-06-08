@@ -1,6 +1,5 @@
 package it.unimol.sdkanalyzer.android;
 
-import org.junit.BeforeClass;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -19,6 +18,7 @@ class ApkContainerTest {
         AndroidToolkit.setDex2jarPath("/usr/bin/dex2jar");
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     @Test
     public void testManifestMetadata() throws Exception {
         File apkFile = AUT;
@@ -35,27 +35,14 @@ class ApkContainerTest {
     }
 
     @Test
-    public void testDexExtractor() throws Exception {
-        File apkFile = AUT;
-
-        ApkContainer container = new ApkContainer(apkFile);
-
-        File dexFile = File.createTempFile("dex",".dex");
-
-        container.extractDex(dexFile);
-
-        assertTrue(dexFile.exists());
-    }
-
-    @Test
     public void testDexesExtractor() throws Exception {
         File apkFile = new File("uber.apk");
 
         ApkContainer container = new ApkContainer(apkFile);
 
         File dexFolder = File.createTempFile("dex", "");
-        dexFolder.delete();
-        dexFolder.mkdir();
+        assertTrue(dexFolder.delete());
+        assertTrue(dexFolder.mkdir());
 
         List<File> dexes = container.extractAllDexes(dexFolder, "classes");
 
@@ -83,9 +70,7 @@ class ApkContainerTest {
 
     @Test
     public void testDex2Jar() throws Exception {
-        File apkFile = AUT;
-
-        ApkContainer container = new ApkContainer(apkFile);
+        ApkContainer container = new ApkContainer(AUT);
 
         File jarFile = File.createTempFile("jar",".jar");
 

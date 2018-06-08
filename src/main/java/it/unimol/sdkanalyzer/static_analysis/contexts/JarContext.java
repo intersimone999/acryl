@@ -26,9 +26,9 @@ import java.util.zip.ZipInputStream;
 public class JarContext {
     private final AnalysisCache analysisCache;
     private final AnalysisOptions analysisOptions;
-    private Map<Boolean, Collection<IClass>> classesInJar;
-    protected String jarPath;
-    private File[] dependencies;
+    private final Map<Boolean, Collection<IClass>> classesInJar;
+    protected final String jarPath;
+    private final File[] dependencies;
     private ClassHierarchy fullHierarchy;
     private CallGraph callGraph;
     private AnalysisScope analysisScope;
@@ -60,8 +60,8 @@ public class JarContext {
         this.analysisScope = WalaUtils.getAnalysisScope(file, GlobalContext.getExclusionsFile(), classpath);
         this.fullHierarchy = ClassHierarchyFactory.make(analysisScope);
 
-        Iterable<Entrypoint> entrypoints = com.ibm.wala.ipa.callgraph.impl.Util.makeMainEntrypoints(this.analysisScope, this.fullHierarchy);
-        this.analysisOptions = new AnalysisOptions(this.analysisScope, entrypoints);
+        Iterable<Entrypoint> entryPoints = com.ibm.wala.ipa.callgraph.impl.Util.makeMainEntrypoints(this.analysisScope, this.fullHierarchy);
+        this.analysisOptions = new AnalysisOptions(this.analysisScope, entryPoints);
         this.analysisOptions.getSSAOptions().setPiNodePolicy(new AllIntegerDueToBranchePiPolicy());
 
         IRFactory<IMethod> factory = new DefaultIRFactory();
@@ -152,7 +152,7 @@ public class JarContext {
         return this.resolveClassContext(iClass.getName().toString());
     }
 
-    public void warmup() {
+    public void warmUp() {
         if (warmedUp)
             return;
 

@@ -87,6 +87,7 @@ public class SDKInfo implements Cloneable {
 
             return copy;
         } catch (CloneNotSupportedException e) {
+            assert false : "This should never happen, the class is cloneable";
         }
         return null;
     }

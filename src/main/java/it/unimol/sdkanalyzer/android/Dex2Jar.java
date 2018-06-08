@@ -1,12 +1,9 @@
 package it.unimol.sdkanalyzer.android;
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
@@ -17,25 +14,26 @@ import java.util.zip.ZipOutputStream;
  * @author Simone Scalabrino.
  */
 public class Dex2Jar {
-    private String program;
+    private final String program;
 
     public Dex2Jar(String pathToDex2Jar) {
         this.program = pathToDex2Jar;
     }
 
-    public void run(File dexFile, File destFile) throws IOException, DexException {
+    public void run(File dexFile, File destinationFile) throws IOException, DexException {
         Runtime runtime = Runtime.getRuntime();
 
-        Process process = runtime.exec(new String[] {this.program, dexFile.getAbsolutePath(), "-o", destFile.getAbsolutePath()});
+        Process process = runtime.exec(new String[] {this.program, dexFile.getAbsolutePath(), "-o", destinationFile.getAbsolutePath()});
         try {
             process.waitFor();
-            if (!destFile.exists())
+            if (!destinationFile.exists())
                 throw new DexException();
         } catch (InterruptedException e) {
             throw new RuntimeException("Aborted process");
         }
     }
 
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "SpellCheckingInspection"})
     public void run(ApkContainer container, File destination) throws IOException, DexException {
         File tempFolder = File.createTempFile("dexextractor", "");
         tempFolder.delete();
@@ -74,7 +72,7 @@ public class Dex2Jar {
                     }
                     zos.closeEntry();
                 } catch (ZipException e) {
-
+                    Logger.getAnonymousLogger().severe(e.toString());
                 }
             }
             zin.close();
@@ -84,7 +82,9 @@ public class Dex2Jar {
         zos.close();
         fos.close();
 
-        tempFolder.delete();
+        boolean deletionResult = tempFolder.delete();
+
+        assert deletionResult;
     }
 
     public static class DexException extends Exception {}

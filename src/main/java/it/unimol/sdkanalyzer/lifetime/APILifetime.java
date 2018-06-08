@@ -5,8 +5,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +17,7 @@ import java.util.regex.Pattern;
  * @author Simone Scalabrino.
  */
 public class APILifetime {
-    private Map<String, APILife> lifeMap;
+    private final Map<String, APILife> lifeMap;
 
     public APILifetime(Map<String, APILife> lifeMap) {
         this.lifeMap = lifeMap;

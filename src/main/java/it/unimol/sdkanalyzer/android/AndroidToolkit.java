@@ -8,7 +8,7 @@ public class AndroidToolkit {
     public static String dex2jarPath;
 
     public static AndroidToolkit instance;
-    private static String androisSDK;
+    private static String androidSDK;
 
     public static void setBuildToolsPath(String value) {
         buildToolsPath = value;
@@ -19,11 +19,11 @@ public class AndroidToolkit {
     }
 
     public static void setAndroidSDK(String value) {
-        androisSDK = value;
+        androidSDK = value;
     }
 
-    public static String getAndroisSDK() {
-        return androisSDK;
+    public static String getAndroidSDK() {
+        return androidSDK;
     }
 
     public static AndroidToolkit getInstance() {
@@ -37,12 +37,10 @@ public class AndroidToolkit {
     }
 
     public Aapt aapt() {
-        Aapt aapt = new Aapt(buildToolsPath);
-        return aapt;
+        return new Aapt(buildToolsPath);
     }
 
     public Dex2Jar dex2jar() {
-        Dex2Jar dex2jar = new Dex2Jar(dex2jarPath);
-        return dex2jar;
+        return new Dex2Jar(dex2jarPath);
     }
 }

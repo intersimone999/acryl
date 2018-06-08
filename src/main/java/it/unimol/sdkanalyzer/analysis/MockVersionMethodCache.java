@@ -2,7 +2,6 @@ package it.unimol.sdkanalyzer.analysis;
 
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 
-import java.io.IOException;
 import java.util.logging.Logger;
 
 /**

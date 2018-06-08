@@ -4,17 +4,9 @@ import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ssa.SSAAbstractInvokeInstruction;
 import com.ibm.wala.ssa.SSAInstruction;
-import it.unimol.sdkanalyzer.analysis.VersionChecker;
-import it.unimol.sdkanalyzer.analysis.VersionDependentInstructionsExtractor;
-import it.unimol.sdkanalyzer.analysis.VersionMethodCache;
-import it.unimol.sdkanalyzer.graphs.IPCFG;
-import it.unimol.sdkanalyzer.graphs.SubCFG;
 import it.unimol.sdkanalyzer.static_analysis.contexts.ClassContext;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
-import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;

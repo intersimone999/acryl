@@ -11,11 +11,12 @@ import java.util.*;
 /**
  * @author Simone Scalabrino.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class ClassContext {
-    private IClass iClass;
-    private JarContext context;
+    private final IClass iClass;
+    private final JarContext context;
 
-    private Map<IMethod, MethodContext> methodMap;
+    private final Map<IMethod, MethodContext> methodMap;
 
     public ClassContext(IClass iClass, JarContext context) {
         this.iClass = iClass;

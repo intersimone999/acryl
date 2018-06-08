@@ -4,7 +4,6 @@ import org.jgrapht.Graph;
 import org.jgrapht.ext.ComponentAttributeProvider;
 import org.jgrapht.ext.ComponentNameProvider;
 import org.jgrapht.ext.DOTExporter;
-import org.jgrapht.graph.DefaultEdge;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -14,6 +13,7 @@ import java.util.logging.Logger;
 /**
  * @author Simone Scalabrino.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class GraphTools {
     private static final GraphTools instance = new GraphTools();
     private static String pathToDot = "/usr/bin/dot";

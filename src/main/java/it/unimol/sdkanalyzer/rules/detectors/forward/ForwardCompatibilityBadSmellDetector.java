@@ -2,8 +2,6 @@ package it.unimol.sdkanalyzer.rules.detectors.forward;
 
 import it.unimol.sdkanalyzer.analysis.VersionChecker;
 import it.unimol.sdkanalyzer.android.ApkContainer;
-import it.unimol.sdkanalyzer.lifetime.APILife;
-import it.unimol.sdkanalyzer.lifetime.APILifetime;
 import it.unimol.sdkanalyzer.rules.Rule;
 import it.unimol.sdkanalyzer.rules.CombinedViolationDetector;
 import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
@@ -11,7 +9,6 @@ import it.unimol.sdkanalyzer.static_analysis.contexts.JarContext;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
 import java.util.Collection;
 
 /**

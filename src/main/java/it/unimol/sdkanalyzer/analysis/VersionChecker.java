@@ -2,6 +2,8 @@ package it.unimol.sdkanalyzer.analysis;
 
 import com.ibm.wala.shrikeBT.IBinaryOpInstruction;
 
+import java.util.logging.Logger;
+
 /**
  * @author Simone Scalabrino.
  */
@@ -88,7 +90,8 @@ public class VersionChecker implements Cloneable {
     }
 
     public void compound(VersionChecker other, IBinaryOpInstruction.IOperator operator) {
-        //TODO implement
+        // TODO implement
+        Logger.getAnonymousLogger("Combinations of checkers are not implemented at the moment.");
     }
 
     public Comparator getComparator() {

@@ -4,7 +4,6 @@ import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ssa.SSACFG;
 import it.unimol.sdkanalyzer.graphs.SubCFG;
 import org.jgrapht.DirectedGraph;
-import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.traverse.DepthFirstIterator;
@@ -56,10 +55,10 @@ public class GraphUtils {
      *            Vertex of graph
      */
     public static class BackDominators<V> {
-        private DirectedGraph<V, DefaultEdge> graph;
-        private Vector<V> vertexPreOrder;
-        private Hashtable<V, V> idom = null;
-        private Hashtable<V, Integer> preOrderMap;
+        private final DirectedGraph<V, DefaultEdge> graph;
+        private final Vector<V> vertexPreOrder;
+        private Hashtable<V, V> dominatorTable = null;
+        private final Hashtable<V, Integer> preOrderMap;
         private SimpleDirectedGraph<V, DefaultEdge> dominatorTree;
 
 
@@ -71,10 +70,10 @@ public class GraphUtils {
             if (vertex == null)
                 throw new RuntimeException("Vertex cannot be null");
 
-            if (idom == null)
+            if (dominatorTable == null)
                 computeBackDominators();
 
-            return idom.get(vertex);
+            return dominatorTable.get(vertex);
         }
 
         /**
@@ -98,21 +97,21 @@ public class GraphUtils {
         }
 
         private static <V> Vector<V> dfsPreOrder(DirectedGraph<V, DefaultEdge> graph, V exit) {
-            DepthFirstIterator<V, DefaultEdge> iter = new DepthFirstIterator<>(graph, exit);
-            iter.setCrossComponentTraversal(false);
-            Vector<V> trav = new Vector<>();
-            while (iter.hasNext()) {
-                trav.add(iter.next());
+            DepthFirstIterator<V, DefaultEdge> iterator = new DepthFirstIterator<>(graph, exit);
+            iterator.setCrossComponentTraversal(false);
+            Vector<V> orderedVector = new Vector<>();
+            while (iterator.hasNext()) {
+                orderedVector.add(iterator.next());
             }
-            return trav;
+            return orderedVector;
         }
 
         protected void computeBackDominators() {
-            if (this.idom != null)
+            if (this.dominatorTable != null)
                 return;
-            this.idom = new Hashtable<>();
+            this.dominatorTable = new Hashtable<>();
             V firstElement = vertexPreOrder.firstElement();
-            idom.put(firstElement, firstElement);
+            dominatorTable.put(firstElement, firstElement);
             if (!graph.incomingEdgesOf(vertexPreOrder.firstElement()).isEmpty())
                 throw new AssertionError(
                         "The entry of the flow graph is not allowed to have incoming edges");
@@ -122,31 +121,31 @@ public class GraphUtils {
                 for (V v : vertexPreOrder) {
                     if (v.equals(firstElement))
                         continue;
-                    V oldIdom = getIDom(v);
-                    V newIdom = null;
+                    V oldDominator = getIDom(v);
+                    V newDominator = null;
                     for (DefaultEdge edge : graph.incomingEdgesOf(v)) {
                         V pre = graph.getEdgeSource(edge);
                         if (getIDom(pre) == null) /* not yet analyzed */
                             continue;
-                        if (newIdom == null) {
+                        if (newDominator == null) {
                             /*
                              * If we only have one (defined) predecessor pre,
                              * IDom(v) = pre
                              */
-                            newIdom = pre;
+                            newDominator = pre;
                         } else {
                             /*
                              * compute the intersection of all defined predecessors
                              * of v
                              */
-                            newIdom = intersectIDoms(pre, newIdom);
+                            newDominator = intersectDominators(pre, newDominator);
                         }
                     }
-                    if (newIdom == null)
+                    if (newDominator == null)
                         throw new AssertionError("newIDom == null !, for " + v);
-                    if (!newIdom.equals(oldIdom)) {
+                    if (!newDominator.equals(oldDominator)) {
                         changed = true;
-                        this.idom.put(v, newIdom);
+                        this.dominatorTable.put(v, newDominator);
                     }
                 }
             } while (changed);
@@ -157,16 +156,16 @@ public class GraphUtils {
                     DefaultEdge.class);
             for (V node : graph.vertexSet()) {
                 domTree.addVertex(node);
-                V idom = getIDom(node);
-                if (idom != null && !node.equals(idom)) {
-                    domTree.addVertex(idom);
-                    domTree.addEdge(idom, node);
+                V dominator = getIDom(node);
+                if (dominator != null && !node.equals(dominator)) {
+                    domTree.addVertex(dominator);
+                    domTree.addEdge(dominator, node);
                 }
             }
             this.dominatorTree = domTree;
         }
 
-        private V intersectIDoms(V v1, V v2) {
+        private V intersectDominators(V v1, V v2) {
             while (v1 != v2) {
                 if (getOrder(v1) < getOrder(v2)) {
                     v2 = getIDom(v2);
@@ -179,22 +178,22 @@ public class GraphUtils {
 
         /**
          * Get the table of immediate back dominators. Note that by convention, the
-         * graph's entry is dominated by itself (so <code>IDOM(n)</code> is a total
-         * function).</br> Note that the set <code>DOM(n)</code> is given by
+         * graph's entry is dominated by itself (so <code>DOMINATOR(n)</code> is a total
+         * function).</br> Note that the set <code>DOMINATOR(n)</code> is given by
          * <ul>
          * <li/><code>DOM(Entry) = Entry</code>
-         * <li/><code>DOM(n) = n \cup DOM(IDOM(n))</code>
+         * <li/><code>DOM(n) = n \cup DOM(DOMINATOR(n))</code>
          * </ul>
          *
          * @return the table of immediate back dominators.
          */
-        public Hashtable<V, V> getIDoms() {
+        public Hashtable<V, V> getDominatorTable() {
             computeBackDominators();
-            return this.idom;
+            return this.dominatorTable;
         }
 
         /**
-         * Check wheter a node back-dominates another one.
+         * Check whether a node back-dominates another one.
          *
          * @param dominator dominator node
          * @param dominated dominated node
@@ -223,18 +222,18 @@ public class GraphUtils {
         public Set<V> getStrictBackDominators(V node) {
             computeBackDominators();
 //		System.out.println(node);
-            Set<V> strictDoms = new HashSet<>();
+            Set<V> strictDominators = new HashSet<>();
             V dominated = node;
             V iDom = getIDom(node);
             while (iDom != dominated) {
-                strictDoms.add(iDom);
+                strictDominators.add(iDom);
                 dominated = iDom;
                 iDom = getIDom(dominated);
             }
             /* my custom addition */
-            strictDoms.add(node);
+            strictDominators.add(node);
             /* addition of current node on dominators */
-            return strictDoms;
+            return strictDominators;
         }
 
         /**

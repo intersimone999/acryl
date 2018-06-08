@@ -10,7 +10,6 @@ import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.annotations.Annotation;
 import it.unimol.sdkanalyzer.analysis.AugmentedSymbolTable;
-import it.unimol.sdkanalyzer.static_analysis.sequence.MethodSequence;
 
 import java.util.*;
 
@@ -18,11 +17,11 @@ import java.util.*;
  * @author Simone Scalabrino.
  */
 public class MethodContext {
-    private IMethod method;
-    private IR intermediateRepresentation;
+    private final IMethod method;
+    private final IR intermediateRepresentation;
     private AugmentedSymbolTable augmentedSymbolTable;
 
-    private ClassContext context;
+    private final ClassContext context;
 
     public MethodContext(IMethod method, ClassContext context) {
         this.method = method;
@@ -104,97 +103,6 @@ public class MethodContext {
         return 0;
     }
 
-    public MethodSequence extractMethodSequence(int instructionNumber) {
-        return this.extractMethodSequence(instructionNumber, false);
-    }
-
-    public MethodSequence extractMethodSequence(int instructionNumber, boolean isJavaInstruction) {
-        DefUse defUse = new DefUse(this.intermediateRepresentation);
-
-        MethodSequence sequence = new MethodSequence(this.getClassContext().getIClass());
-
-        Set<Integer> analyzedUses = new HashSet<>();
-        Queue<Integer> useQueue = new LinkedList<>();
-        List<SSAInstruction> slice = new ArrayList<>();
-
-        if (isJavaInstruction) {
-            try {
-                List<SSAInstruction> initialInstructions = this.getInstructionsForJavaLine(instructionNumber);
-
-                boolean ok = false;
-                for (int i = initialInstructions.size() - 1; i >= 0; i--) {
-                    //Starts to add instructions from the last conditional branch. E.g., in for statements, the typical "++" is ignored.
-                    if (initialInstructions.get(i) instanceof SSAConditionalBranchInstruction || initialInstructions.get(i) instanceof SSASwitchInstruction)
-                        ok = true;
-
-                    if (ok)
-                        slice.add(0, initialInstructions.get(i));
-                }
-
-                for (SSAInstruction initialInstruction : initialInstructions) {
-                    for (int i = 0; i < initialInstruction.getNumberOfUses(); i++) {
-                        useQueue.add(initialInstruction.getUse(i));
-                    }
-                }
-            } catch (InvalidClassFileException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            SSAInstruction initialInstruction = this.intermediateRepresentation.getInstructions()[instructionNumber];
-            slice.add(initialInstruction);
-
-            for (int i = 0; i < initialInstruction.getNumberOfUses(); i++) {
-                useQueue.add(initialInstruction.getUse(i));
-            }
-        }
-
-        while (!useQueue.isEmpty()) {
-            Integer useToAnalyze = useQueue.poll();
-            assert useToAnalyze != null;
-
-            analyzedUses.add(useToAnalyze);
-
-            //If it is used a parameter...
-            if (useToAnalyze <= this.method.getNumberOfParameters() + 1) {
-                if (useToAnalyze != 1)
-                    sequence.setContainsParameters(true);
-            } else {
-                SSAInstruction defInstruction = defUse.getDef(useToAnalyze);
-
-                if (defInstruction != null) {
-                    if (defInstruction instanceof SSAAbstractInvokeInstruction) {
-                        SSAAbstractInvokeInstruction invokeInstruction = ((SSAAbstractInvokeInstruction) defInstruction);
-
-                        if (!slice.contains(invokeInstruction))
-                            slice.add(invokeInstruction);
-                    } else if (defInstruction instanceof SSABinaryOpInstruction) {
-                        SSABinaryOpInstruction binaryInstruction = ((SSABinaryOpInstruction) defInstruction);
-
-                        if (!slice.contains(binaryInstruction))
-                            slice.add(binaryInstruction);
-                    } else if (defInstruction instanceof SSAFieldAccessInstruction) {
-                        sequence.setContainsInstanceVariables(true);
-                    }
-
-                    for (int i = 0; i < defInstruction.getNumberOfUses(); i++) {
-                        int usedVar = defInstruction.getUse(i);
-
-                        if (!analyzedUses.contains(usedVar))
-                            useQueue.add(usedVar);
-                    }
-                }
-            }
-        }
-
-        slice.sort(Comparator.comparingInt(i -> i.iindex));
-
-        for (SSAInstruction instruction : slice) {
-            sequence.addMethodCall(instruction);
-        }
-
-        return sequence;
-    }
-
     public IMethod getIMethod() {
         return method;
     }
@@ -241,44 +149,4 @@ public class MethodContext {
 
         return null;
     }
-
-    //    @Deprecated
-//    public MethodSequence extractMethodSequenceFromSlice(int instructionNumber, int variableIndex) throws CancelException {
-//        SSAInstruction instruction = this.intermediateRepresentation.getInstructions()[instructionNumber];
-//        assert instruction instanceof SSAConditionalBranchInstruction;
-//        SSAConditionalBranchInstruction branchInstruction = ((SSAConditionalBranchInstruction) instruction);
-//
-////        String[] names = this.intermediateRepresentation.getLocalNames(instructionNumber, variableIndex);
-//        NormalStatement normalStatement = new NormalStatement(this.getCGNode(), instructionNumber);
-//
-//        Collection<Statement> statements = Slicer.computeBackwardSlice(normalStatement, this.getJarContext().getCallGraph(), this.getJarContext().getPointerAnalysis());
-//
-//        MethodSequence sequence = new MethodSequence(this.getJarContext().getHierarchy(), this.getClassContext().getIClass());
-//        for (Statement statement : statements) {
-//            switch (statement.getKind()) {
-//                case NORMAL:
-//                    SSAInstruction ssaInstruction = ((NormalStatement) statement).getInstruction();
-//
-//                    if (ssaInstruction instanceof SSAAbstractInvokeInstruction) {
-//                        SSAAbstractInvokeInstruction invokeInstruction = ((SSAAbstractInvokeInstruction) ssaInstruction);
-//
-//                        sequence.addMethodCall(invokeInstruction.getDeclaredTarget().getSignature());
-//                    } else if (ssaInstruction instanceof SSABinaryOpInstruction) {
-//                        SSABinaryOpInstruction binaryInstruction = ((SSABinaryOpInstruction) ssaInstruction);
-//
-//                        sequence.addMethodCall(binaryInstruction.getOperator().toString());
-//                    } else if (ssaInstruction instanceof SSAFieldAccessInstruction) {
-//                        sequence.setContainsInstanceVariables(true);
-//                    }
-//
-////                    sequence.addMethodCall();
-//                    break;
-//                case PARAM_CALLER:
-//                    sequence.setContainsParameters(true);
-//                    break;
-//            }
-//        }
-//
-//        return sequence;
-//    }
 }

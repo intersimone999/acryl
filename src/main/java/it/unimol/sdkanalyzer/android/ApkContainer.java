@@ -1,7 +1,5 @@
 package it.unimol.sdkanalyzer.android;
 
-import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +36,7 @@ public class ApkContainer {
         BufferedInputStream bin = new BufferedInputStream(fin);
 
         ZipInputStream zin = new ZipInputStream(bin);
-        ZipEntry ze = null;
+        ZipEntry ze;
         while ((ze = zin.getNextEntry()) != null) {
             if (ze.getName().equals("classes.dex")) {
                 byte[] buffer = new byte[8192];

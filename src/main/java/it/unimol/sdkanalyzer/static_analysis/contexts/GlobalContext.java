@@ -12,7 +12,7 @@ import java.util.Map;
  * @author Simone Scalabrino.
  */
 public class GlobalContext {
-    private static Map<String, JarContext> contexts;
+    private static final Map<String, JarContext> contexts;
 
     static {
         contexts = new HashMap<>();

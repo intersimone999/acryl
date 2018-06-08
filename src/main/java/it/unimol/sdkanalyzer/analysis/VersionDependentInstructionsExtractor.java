@@ -41,58 +41,7 @@ public class VersionDependentInstructionsExtractor {
                 result.add(subCFG);
             }
         }
-
-//        CFGVisitor visitor = new CFGVisitor(methodContext);
-//
-//        AugmentedSymbolTable symbolTable = methodContext.getAugmentedSymbolTable();
-//        symbolTable.update(this.versionMethodCache);
-//
-//
-//
-//        visitor.visit(block -> {
-//            if (block.getLastInstruction() instanceof SSAConditionalBranchInstruction) {
-//                SSAConditionalBranchInstruction lastInstruction = (SSAConditionalBranchInstruction) block.getLastInstruction();
-//
-//                SDKInfo checker = symbolTable.getCheckingInstructionsTable().get(lastInstruction.iindex);
-//                try {
-//                    visitor.visitConditionalBranchingBlock(block,
-//                            trueSubCFG -> {
-//                                VersionChecker subChecker = checker != null ? checker.getVersionFor(true) : new VersionChecker.NullChecker();
-//                                result.put(subChecker, trueSubCFG);
-//                            },
-//
-//                            falseSubCFG -> {
-//                                VersionChecker subChecker = checker != null ? checker.getVersionFor(false) : new VersionChecker.NullChecker();
-//                                result.put(subChecker, falseSubCFG);
-//                            }
-//                    );
-//                } catch (CFGVisitor.NoEndingBlockException e) {
-//                    Logger.getAnonymousLogger().warning("\tCould not find ending block of " + block.toString());
-//                }
-//            }
-//        });
-//
-//        // Forces the removal of actually checked blocks.
-//        Set<ISSABasicBlock> checkedBlocks   = new HashSet<>();
-//        for (Map.Entry<VersionChecker, SubCFG> entry : result.entrySet()) {
-//            if (!(entry.getKey() instanceof VersionChecker.NullChecker))
-//                checkedBlocks.addAll(entry.getValue().vertexSet());
-//        }
-//
-//        for (Map.Entry<VersionChecker, SubCFG> entry : result.entrySet()) {
-//            if (entry.getKey() instanceof VersionChecker.NullChecker){
-//                entry.getValue().removeAllVertices(checkedBlocks);
-//            }
-//        }
-//
-//        for (Map.Entry<VersionChecker, SubCFG> entry : result.entrySet()) {
-//            if (entry.getKey() instanceof VersionChecker.NullChecker){
-//                entry.getValue().removeAllVertices(checkedBlocks);
-//            }
-//        }
-
-        // Warning: the null checkers may not be incomplete graphs because of missing edges (caused by the removal of actually
-        // checked blocks).
+        
         return result;
     }
 

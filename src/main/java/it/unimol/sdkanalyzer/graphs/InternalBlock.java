@@ -13,8 +13,8 @@ import java.util.UUID;
  */
 public class InternalBlock {
     private String identifier;
-    private List<SSAInstruction> instructions;
-    private List<String> stringInstructions;
+    private final List<SSAInstruction> instructions;
+    private final List<String> stringInstructions;
 
     public InternalBlock() {
         this.identifier = UUID.randomUUID().toString();

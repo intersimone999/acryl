@@ -13,16 +13,13 @@ import java.util.*;
  */
 public class CFGVisitor {
     private final SSACFG cfg;
+    @SuppressWarnings("unused")
     private final MethodContext context;
     private GraphUtils.BackDominators<ISSABasicBlock> backDominators;
 
     public CFGVisitor(MethodContext context) {
         this.context = context;
         this.cfg = context.getIntermediateRepresentation().getControlFlowGraph();
-    }
-
-    public SSACFG getCfg() {
-        return cfg;
     }
 
     public void visit(CFGVisitorAction action) {
@@ -34,6 +31,7 @@ public class CFGVisitor {
         }
     }
 
+    @SuppressWarnings("unused")
     public void visit(ISSABasicBlock from, CFGVisitorAction action) {
         SubCFG subCFG = new SubCFG(cfg);
 
@@ -68,7 +66,7 @@ public class CFGVisitor {
         }
     }
 
-    public void visitConditionalBranchingBlock(ISSABasicBlock branchingBlock, CFGSubgraphVisitorAction actionOnTrue, CFGSubgraphVisitorAction actionOnFalse)
+    public void visitConditionalBranchingBlock(ISSABasicBlock branchingBlock, CFGSubGraphVisitorAction actionOnTrue, CFGSubGraphVisitorAction actionOnFalse)
             throws NoEndingBlockException{
         assert this.cfg.getNormalSuccessors(branchingBlock).size() > 1;
         assert branchingBlock.getLastInstruction() instanceof SSAConditionalBranchInstruction;
@@ -107,7 +105,7 @@ public class CFGVisitor {
         void visit(ISSABasicBlock block);
     }
 
-    public interface CFGSubgraphVisitorAction {
+    public interface CFGSubGraphVisitorAction {
         void visit(SubCFG subCFG);
     }
 

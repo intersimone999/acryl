@@ -7,7 +7,6 @@ import it.unimol.sdkanalyzer.rules.CombinedViolationDetector;
 import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,8 +17,7 @@ import static it.unimol.sdkanalyzer.analysis.VersionChecker.Comparator.*;
  * @author Simone Scalabrino.
  */
 public class WrongCheckDetector extends SingleRuleViolationDetector {
-    private static final String MESSAGE_WCHECK        = "[Critical] Do not use check %s; use %s instead";
-    private static final String MESSAGE_WVERSION = "[Critical] You use a wrong version checking. You should check for %s, but you check for %s";
+    private static final String MESSAGE_WRONG_VERSION = "[Critical] You use a wrong version checking. You should check for %s, but you check for %s";
 
     @Override
     public boolean violatesRule(ApkContainer apk, MethodContext methodContext, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) {
@@ -97,18 +95,18 @@ public class WrongCheckDetector extends SingleRuleViolationDetector {
     ) {
 //        boolean shouldBeUsedInNewVersions  = checkToImplement.getComparator().equals(GE) || checkToImplement.getComparator().equals(GT);
 //        boolean shouldBeUsedInOldVersions  = checkToImplement.getComparator().equals(LE) || checkToImplement.getComparator().equals(LT);
-//        boolean shouldBeUsedInExactVersons = checkToImplement.getComparator().equals(EQ) || checkToImplement.getComparator().equals(NE);
+//        boolean shouldBeUsedInExactVersions = checkToImplement.getComparator().equals(EQ) || checkToImplement.getComparator().equals(NE);
 //
 //        boolean actuallyUsedInNewVersions   = actualCheck.getComparator().equals(GE) || actualCheck.getComparator().equals(GT);
 //        boolean actuallyUsedInOldVersions   = actualCheck.getComparator().equals(LE) || actualCheck.getComparator().equals(LT);
 //        boolean actuallyUsedInExactVersions = actualCheck.getComparator().equals(EQ) || actualCheck.getComparator().equals(NE);
 
-//        if (shouldBeUsedInExactVersons != actuallyUsedInExactVersions ||
+//        if (shouldBeUsedInExactVersions != actuallyUsedInExactVersions ||
 //                shouldBeUsedInOldVersions != actuallyUsedInOldVersions ||
 //                shouldBeUsedInNewVersions != actuallyUsedInNewVersions)
 //            return new CombinedViolationDetector.RuleViolationReport(
 //                    CombinedViolationDetector.RuleViolation.WrongCheck,
-//                    String.format(MESSAGE_WCHECK, actualCheck.toString(), checkToImplement.toString()),
+//                    String.format(MESSAGE_WRONG_CHECK, actualCheck.toString(), checkToImplement.toString()),
 //                    rule.getConfidence(),
 //                    usedApis
 //            );
@@ -138,7 +136,7 @@ public class WrongCheckDetector extends SingleRuleViolationDetector {
         if (ruleCheckedVersion != codeCheckedVersion)
             new CombinedViolationDetector.RuleViolationReport(
                     CombinedViolationDetector.RuleViolation.WrongCheck,
-                    String.format(MESSAGE_WVERSION, actualCheck.toString(), checkToImplement.toString()),
+                    String.format(MESSAGE_WRONG_VERSION, actualCheck.toString(), checkToImplement.toString()),
                     rule.getConfidence(),
                     usedApis
             );

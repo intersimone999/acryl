@@ -5,7 +5,6 @@ import com.ibm.wala.ssa.*;
 import com.ibm.wala.types.MethodReference;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 
-import java.nio.channels.FileLock;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -159,6 +158,7 @@ public class AugmentedSymbolTable {
         this.variableTable.put(phiInstruction.getDef(), null);
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     private void updateForFieldAccess(SSAFieldAccessInstruction fieldAccessInstruction) {
         if (fieldAccessInstruction.getDeclaredField().getName().toString().equals("SDK_INT") &&
                 fieldAccessInstruction.getDeclaredField().getDeclaringClass().getName().toString().equals("Landroid/os/Build$VERSION")) {

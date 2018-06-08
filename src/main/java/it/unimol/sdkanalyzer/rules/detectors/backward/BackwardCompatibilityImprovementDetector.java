@@ -2,7 +2,6 @@ package it.unimol.sdkanalyzer.rules.detectors.backward;
 
 import it.unimol.sdkanalyzer.analysis.VersionChecker;
 import it.unimol.sdkanalyzer.android.ApkContainer;
-import it.unimol.sdkanalyzer.lifetime.APILifetime;
 import it.unimol.sdkanalyzer.rules.Rule;
 import it.unimol.sdkanalyzer.rules.CombinedViolationDetector;
 import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
@@ -18,10 +17,8 @@ import java.util.logging.Logger;
  */
 public class BackwardCompatibilityImprovementDetector extends SingleRuleViolationDetector {
     private static final String MESSAGE = "If you want to support older versions (<= %d), add a check and handle using these APIs: %s";
-    private final APILifetime apiLifetime;
 
-    public BackwardCompatibilityImprovementDetector(APILifetime apiLifetime) {
-        this.apiLifetime = apiLifetime;
+    public BackwardCompatibilityImprovementDetector() {
     }
 
     @Override

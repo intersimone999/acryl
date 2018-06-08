@@ -15,7 +15,7 @@ import java.io.IOException;
  */
 class VersionMethodCacheTest extends JarTester {
     @Test
-    public void testCacher() throws Exception {
+    public void testCache() throws Exception {
         JarContext context = getTestJar();
 
         VersionMethodCache cache = new VersionMethodCache(context);
@@ -37,7 +37,7 @@ class VersionMethodCacheTest extends JarTester {
     }
 
     @Test
-    public void testCacherOnStaticMethods() throws ClassHierarchyException, IOException {
+    public void testCacheOnStaticMethods() throws ClassHierarchyException, IOException {
         JarContext context = GlobalContext.getAndroidContext("/home/simone/University/Ricerca/2018/AndroidSDK/crawler/fdroid/naman14.timber_14.jar", CLASSPATH);
 
         VersionMethodCache cache = new VersionMethodCache(context);
