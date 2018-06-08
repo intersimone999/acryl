@@ -91,7 +91,7 @@ public class VersionChecker implements Cloneable {
 
     public void compound(VersionChecker other, IBinaryOpInstruction.IOperator operator) {
         // TODO implement
-        Logger.getAnonymousLogger("Combinations of checkers are not implemented at the moment.");
+        Logger.getAnonymousLogger().warning("Combinations of checkers are not implemented at the moment.");
     }
 
     public Comparator getComparator() {

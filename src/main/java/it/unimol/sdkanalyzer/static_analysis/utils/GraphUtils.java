@@ -46,7 +46,7 @@ public class GraphUtils {
     }
 
     /**
-     * Compute dominator of a graph according to:
+     * Compute ; of a graph according to:
      * "A Simple, Fast Dominance Algorithm" Cooper et. al.
      *
      * @author giograno
