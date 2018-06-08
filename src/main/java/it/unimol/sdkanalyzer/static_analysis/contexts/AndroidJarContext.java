@@ -45,7 +45,7 @@ public class AndroidJarContext extends JarContext {
                     isSystemPackage = true;
             }
 
-            if (!isSystemPackage)
+            if (isSystemPackage)
                 continue;
 
             if (!entry.isDirectory() && entry.getName().endsWith(".class")) {
