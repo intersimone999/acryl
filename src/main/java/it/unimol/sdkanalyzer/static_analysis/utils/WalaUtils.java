@@ -43,7 +43,7 @@ public class WalaUtils {
         return cache.getSSACache().findOrCreateIR(m, Everywhere.EVERYWHERE, options.getSSAOptions());
     }
 
-    public static AnalysisScope getAnalysisScope(File jarPath, File exclusionPath, File[] classpath) throws IOException, ClassHierarchyException {
+    public static AnalysisScope getAnalysisScope(File jarPath, File exclusionPath, File[] classpath) throws IOException {
         File exFile=new FileProvider().getFile(exclusionPath.getPath());
         AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(jarPath.getAbsolutePath(),exFile);
         for (File file : classpath) {

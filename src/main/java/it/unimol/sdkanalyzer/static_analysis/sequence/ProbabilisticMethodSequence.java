@@ -121,7 +121,7 @@ public class ProbabilisticMethodSequence implements Serializable {
         return getMostLikelyInstruction(resolveMethodContext());
     }
 
-    private SSAInstruction getMostLikelyInstruction(MethodContext methodContext) throws IOException, ClassHierarchyException, InvalidClassFileException {
+    private SSAInstruction getMostLikelyInstruction(MethodContext methodContext) throws InvalidClassFileException {
         List<SSAInstruction> matchingInstructions = methodContext.getInstructionsForJavaLine(this.javaLine);
 
         SSAInstruction bestMatching = null;
