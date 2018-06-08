@@ -4,6 +4,8 @@ import com.ibm.wala.ssa.*;
 import it.unimol.sdkanalyzer.static_analysis.utils.CFGVisitor;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 
+import java.util.logging.Logger;
+
 /**
  * Labels methods that return the SDK version number with either:
  * - the specific version returned
@@ -57,7 +59,7 @@ public class VersionMethodLabeler {
                                 }
                         );
                     } catch (CFGVisitor.NoEndingBlockException e) {
-                        System.err.println("\tCould not find ending block for " + block.toString());
+                        Logger.getAnonymousLogger().warning("\tCould not find ending block for " + block.toString());
                     }
                 }
             }

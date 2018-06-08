@@ -7,16 +7,17 @@ import it.unimol.sdkanalyzer.lifetime.APILifetime;
 import it.unimol.sdkanalyzer.rules.Rule;
 import it.unimol.sdkanalyzer.rules.CombinedViolationDetector;
 import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
+import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
  */
 public class BackwardCompatibilityBadSmellDetector extends SingleRuleViolationDetector {
-    private static final String MESSAGE = "You should use this APIs differently for SDK versions older than %d. Add a check and handle with: %s";
     private final APILifetime apiLifetime;
 
     public BackwardCompatibilityBadSmellDetector(APILifetime apiLifetime) {
@@ -24,15 +25,20 @@ public class BackwardCompatibilityBadSmellDetector extends SingleRuleViolationDe
     }
 
     @Override
-    public boolean violatesRule(ApkContainer apk, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) throws IOException {
+    public boolean violatesRule(ApkContainer apk, MethodContext methodContext, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) throws IOException {
         if (rule.getFalseApis().size() == 0)
             return false;
 
         if (!apisInCode.containsAll(rule.getFalseApis()))
             return false;
 
-        if (codeCheck != null)
+        if (!codeCheck.isNull())
             return false;
+
+        if (methodContext.getTargetAndroidSDK() > rule.getChecker().getCheckedVersion()) {
+            Logger.getAnonymousLogger().info("Checking of " + methodContext.getIMethod().getSignature() + " aborted because it has a compatible TargetApi");
+            return false;
+        }
 
         if (apk.getMinSDKVersion() > rule.getChecker().getCheckedVersion())
             return false;
@@ -48,6 +54,7 @@ public class BackwardCompatibilityBadSmellDetector extends SingleRuleViolationDe
     }
 
     public CombinedViolationDetector.RuleViolationReport buildReport(
+            ApkContainer apk,
             Rule rule,
             VersionChecker checkToImplement,
             VersionChecker actualCheck,
@@ -59,10 +66,10 @@ public class BackwardCompatibilityBadSmellDetector extends SingleRuleViolationDe
         if (alternativeApis.containsAll(usedApis)) {
             // Wrong Contextual Usage
 
-            messageBuilder.append("The APIs you are using should be used in a different way in older Android releases(")
+            messageBuilder.append("The APIs you are using should be used in a different way in old Android versions (")
                     .append(checkToImplement.toString())
                     .append("). ")
-                    .append("Consider using: ")
+                    .append("). For such versions, consider using these APIs: ")
                     .append(alternativeApisString)
                     .append(".");
         } else if (alternativeApis.size() == 0) {
@@ -72,7 +79,11 @@ public class BackwardCompatibilityBadSmellDetector extends SingleRuleViolationDe
                     .append("). ")
                     .append("Consider adding a check. ");
         } else {
-            messageBuilder.append(String.format(MESSAGE, checkToImplement.getCheckedVersion(), alternativeApisString));
+            messageBuilder.append("You should use different APIs in old Android versions (")
+                    .append(checkToImplement.toString())
+                    .append("). For such versions, consider using these APIs: ")
+                    .append(alternativeApisString)
+                    .append(".");
         }
         return new CombinedViolationDetector.RuleViolationReport(
                 CombinedViolationDetector.RuleViolation.BackwardBadSmell,

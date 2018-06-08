@@ -12,6 +12,7 @@ import it.unimol.sdkanalyzer.rules.detectors.comparison.WrongCheckDetector;
 import it.unimol.sdkanalyzer.rules.detectors.forward.ForwardCompatibilityBadSmellDetector;
 import it.unimol.sdkanalyzer.rules.detectors.forward.ForwardCompatibilityBugDetector;
 import it.unimol.sdkanalyzer.rules.detectors.forward.ForwardCompatibilityImprovementDetector;
+import it.unimol.sdkanalyzer.static_analysis.contexts.JarContext;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 import org.apache.commons.lang3.StringUtils;
 
@@ -28,14 +29,14 @@ public class CombinedViolationDetector {
     private APILifetime apiLifetime;
     private final SingleRuleViolationDetector[] detectors;
 
-    public CombinedViolationDetector(ApkContainer apk, APILifetime apiLifetime) {
+    public CombinedViolationDetector(ApkContainer apk, APILifetime apiLifetime, JarContext context) {
         this.apk = apk;
         this.apiLifetime = apiLifetime;
         this.detectors = new SingleRuleViolationDetector[] {
                 new ForwardCompatibilityBugDetector(apiLifetime),
                 new BackwardCompatibilityBugDetector(apiLifetime),
 
-                new ForwardCompatibilityBadSmellDetector(apiLifetime),
+                new ForwardCompatibilityBadSmellDetector(context),
 
                 new ForwardCompatibilityImprovementDetector(apiLifetime),
                 new BackwardCompatibilityImprovementDetector(apiLifetime),
@@ -44,9 +45,9 @@ public class CombinedViolationDetector {
         };
     }
 
-    public RuleViolationReport violatesRule(VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) throws IOException {
+    public RuleViolationReport violatesRule(MethodContext methodContext, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) throws IOException {
         for (SingleRuleViolationDetector detector : this.detectors) {
-            if (detector.violatesRule(apk, codeCheck, rule, apisInCode)) {
+            if (detector.violatesRule(apk, methodContext, codeCheck, rule, apisInCode)) {
                 VersionChecker ruleCheck = rule.getChecker().copy();
                 Collection<String> alternativeApis;
                 Collection<String> matchedApis;
@@ -62,7 +63,7 @@ public class CombinedViolationDetector {
 
                 assert matchedApis.size() > 0;
 
-                return detector.buildReport(rule, ruleCheck, codeCheck, matchedApis, alternativeApis);
+                return detector.buildReport(apk, rule, ruleCheck, codeCheck, matchedApis, alternativeApis);
             }
         }
 

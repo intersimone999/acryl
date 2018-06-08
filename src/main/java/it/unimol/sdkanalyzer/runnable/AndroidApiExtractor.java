@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
@@ -26,7 +27,7 @@ public class AndroidApiExtractor extends CommonRunner {
     public void run(String[] args) throws Exception {
         checkAndInitialize(args);
 
-        apkContext.setClassNotFoundHandler(className -> System.err.println("Class not found: " + className));
+        apkContext.setClassNotFoundHandler(className -> Logger.getAnonymousLogger().warning("Class not found: " + className));
 
         String appName      = apk.getPackageName();
         String appVersion   = apk.getVersion();
@@ -39,6 +40,9 @@ public class AndroidApiExtractor extends CommonRunner {
 
             for (IMethod iMethod : classContext.getNonAbstractMethods()) {
                 MethodContext methodContext = classContext.resolveMethodContext(iMethod);
+
+                if (methodContext.getIntermediateRepresentation() == null)
+                    continue;
 
                 for (SSAInstruction instruction : methodContext.getIntermediateRepresentation().getInstructions()) {
                     if (instruction instanceof SSAAbstractInvokeInstruction) {

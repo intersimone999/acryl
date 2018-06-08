@@ -137,9 +137,25 @@ public class VersionChecker implements Cloneable {
         return result.toString();
     }
 
+    public boolean isNull() {
+        return false;
+    }
+
     public VersionChecker getInverse(boolean hardInversion) {
         VersionChecker copy = this.copy();
         copy.invertComparator(hardInversion);
         return copy;
+    }
+
+    public static class NullChecker extends VersionChecker {
+        @Override
+        public String toString() {
+            return "Null checker";
+        }
+
+        @Override
+        public boolean isNull() {
+            return true;
+        }
     }
 }

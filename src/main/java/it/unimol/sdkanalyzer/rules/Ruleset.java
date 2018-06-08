@@ -11,6 +11,7 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Set of detection rules
@@ -20,9 +21,10 @@ public class Ruleset {
     private HashMap<String, Set<Rule>> hashMap;
     private Set<Rule> rules;
 
-    public Ruleset(File file, int minConfidence) throws IOException {
+    public Ruleset(File file, int minApps, double minConfidence) throws IOException {
         this();
-        this.load(file, minConfidence);
+        this.load(file, minApps, minConfidence);
+        Logger.getAnonymousLogger().info("Using " + this.rules.size() + " rules.");
     }
 
     public Ruleset() {
@@ -67,21 +69,22 @@ public class Ruleset {
         }
     }
 
-    private void load(File file, int minConfidence) throws IOException {
+    private void load(File file, int minApps, double minConfidence) throws IOException {
         try (Reader reader = Files.newBufferedReader(Paths.get(file.getAbsolutePath()))) {
             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader());
 
             for (CSVRecord csvRecord : csvParser) {
-                String comparator   = csvRecord.get(0);
-                int version         = Integer.parseInt(csvRecord.get(1));
+                String comparator   = csvRecord.get("comparison");
+                int version         = Integer.parseInt(csvRecord.get("version"));
 
-                String trueApis     = csvRecord.get(2);
-                String falseApis    = csvRecord.get(3);
+                String trueApis     = csvRecord.get("true_apis");
+                String falseApis    = csvRecord.get("false_apis");
 
-                int occurrences     = Integer.parseInt(csvRecord.get(4));
-                int reliability     = Integer.parseInt(csvRecord.get(5));
+                double occurrences  = Double.parseDouble(csvRecord.get("occurrences"));
+                int apps            = Integer.parseInt(csvRecord.get("napps"));
+                double confidence  = Double.parseDouble(csvRecord.get("reliability"));
 
-                if (reliability < minConfidence)
+                if (confidence < minConfidence || apps < minApps)
                     continue;
 
                 VersionChecker versionChecker = new VersionChecker();
@@ -91,14 +94,14 @@ public class Ruleset {
                 Collection<String> trueApisSeq  = new HashSet<>(Arrays.asList(trueApis.split("&")));
                 Collection<String> falseApisSeq = new HashSet<>(Arrays.asList(falseApis.split("&")));
 
-                if (trueApisSeq.size() == 1 && trueApisSeq.contains(""))
+                if (trueApisSeq.size() == 1)
                     trueApisSeq.remove("");
 
-                if (falseApisSeq.size() == 1 && falseApisSeq.contains(""))
+                if (falseApisSeq.size() == 1)
                     falseApisSeq.remove("");
 
                 Rule rule = new Rule(versionChecker, trueApisSeq, falseApisSeq);
-                rule.setConfidence(reliability);
+                rule.setConfidence(confidence);
 
                 this.addRule(rule);
             }

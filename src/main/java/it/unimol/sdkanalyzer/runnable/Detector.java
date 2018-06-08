@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Detects problems in a APK
@@ -33,12 +34,20 @@ public class Detector extends CommonRunner {
         if (args.length < 7)
             throw new RuntimeException("Specify also the lifetime file as last parameter");
 
-        int minConfidence;
+        double minConfidence;
         if (args.length >= 8) {
-            minConfidence = Integer.parseInt(args[7]);
+            minConfidence = Double.parseDouble(args[7]);
         } else {
-            System.out.println("Using default minimum confidence: 5");
+            Logger.getAnonymousLogger().info("Using default minimum confidence: 0");
             minConfidence = 2;
+        }
+
+        int minApps;
+        if (args.length >= 9) {
+            minApps = Integer.parseInt(args[8]);
+        } else {
+            Logger.getAnonymousLogger().info("Using default minimum confidence: 10");
+            minApps = 10;
         }
 
 
@@ -46,21 +55,21 @@ public class Detector extends CommonRunner {
         File lifetimeFile = new File(args[6]);
 
         boolean quick = false;
-        if (args.length == 9 && args[8].equals("-quick")) {
+        if (args.length == 10 && args[9].equals("-quick")) {
             quick = true;
         }
 
         apkContext.setClassNotFoundHandler(
-                className -> System.err.println("Class not found: " + className)
+                className -> Logger.getAnonymousLogger().warning("Class not found: " + className)
         );
 
         VersionMethodCache cache = new VersionMethodCache(apkContext);
         if (!quick) {
-            System.out.println("Labeling methods...");
+            Logger.getAnonymousLogger().info("Labeling methods...");
             cache.build();
-            System.out.println("All method labeled!");
+            Logger.getAnonymousLogger().info("All method labeled!");
         } else {
-            System.out.println("Quick execution: skipped method labeling.");
+            Logger.getAnonymousLogger().info("Quick execution: skipped method labeling.");
         }
 
         String appName      = apk.getPackageName();
@@ -70,35 +79,48 @@ public class Detector extends CommonRunner {
 
         APILifetime apiLifetime = APILifetime.load(lifetimeFile);
 
-        Ruleset ruleset = new Ruleset(rulesFile, minConfidence);
-        CombinedViolationDetector detector = new CombinedViolationDetector(apk, apiLifetime);
+        Ruleset ruleset = new Ruleset(rulesFile, minApps, minConfidence);
+        CombinedViolationDetector detector = new CombinedViolationDetector(apk, apiLifetime, apkContext);
 
-        System.out.println("Starting analysis...");
-        VersionDependentInstructionsExtractor dependentInstructionsExtractor = new VersionDependentInstructionsExtractor(cache);
-
+        Logger.getAnonymousLogger().info("Starting analysis...");
+        VersionDependentInstructionsExtractor extractor = new VersionDependentInstructionsExtractor(cache);
 
         List<CombinedViolationDetector.RuleViolationReport> allReports = new ArrayList<>();
 
         for (IClass iClass : apkContext.getClassesInJar(false)) {
             ClassContext classContext = apkContext.resolveClassContext(iClass);
 
+            if (classContext.isForcingDetectionSkip()) {
+                Logger.getAnonymousLogger().info("Forced detection skipped for class " + iClass.getName().toString());
+                continue;
+            }
+
             for (IMethod iMethod : classContext.getNonAbstractMethods()) {
                 MethodContext methodContext = classContext.resolveMethodContext(iMethod);
-                methodContext.getAugmentedSymbolTable().update(cache);
-
-                Map<VersionChecker, SubCFG> versionDependentParts = dependentInstructionsExtractor.extractAllSubCFGs(methodContext);
-
-                if (versionDependentParts == null)
+                if (methodContext.getIntermediateRepresentation() == null)
                     continue;
 
+                if (methodContext.isForcingDetectionSkip()) {
+                    Logger.getAnonymousLogger().info("Forced detection skipped for method " + iMethod.getSignature());
+                    continue;
+                }
+
+                methodContext.getAugmentedSymbolTable().update(cache);
+
+                Map<VersionChecker, SubCFG> versionDependentParts   = extractor.extractVersionDependentCFG(methodContext);
+                Set<SubCFG> uncheckedBlocks                         = extractor.extractVersionIndependentCFGs(methodContext, versionDependentParts.values());
+                for (SubCFG uncheckedBlock : uncheckedBlocks) {
+                    versionDependentParts.put(new VersionChecker.NullChecker(), uncheckedBlock);
+                }
+
                 for (Map.Entry<VersionChecker, SubCFG> entry : versionDependentParts.entrySet()) {
-                    IPCFG ipcfg = IPCFG.buildIPCFG(apkContext, entry.getValue());
+                    IPCFG ipcfg = IPCFG.buildIPCFG(apkContext, entry.getValue(), false);
                     entry.getValue().setMethodContext(methodContext);
 
                     Collection<String> apis = ipcfg.getCalledAPIs("android");
                     List<CombinedViolationDetector.RuleViolationReport> reports = new ArrayList<>();
                     for (Rule rule : ruleset.matchingRules(apis)) {
-                        CombinedViolationDetector.RuleViolationReport report = detector.violatesRule(entry.getKey(), rule, apis);
+                        CombinedViolationDetector.RuleViolationReport report = detector.violatesRule(methodContext, entry.getKey(), rule, apis);
                         if (report != null)
                             reports.add(report);
                     }
@@ -172,7 +194,7 @@ public class Detector extends CommonRunner {
                 writer.print("\n");
             }
         }
-        System.out.println("All done!");
+        Logger.getAnonymousLogger().info("All done!");
     }
     public static void main(String[] args) throws Exception {
         new Detector().run(args);

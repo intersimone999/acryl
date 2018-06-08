@@ -9,6 +9,7 @@ import org.jgrapht.graph.DefaultEdge;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
@@ -33,7 +34,7 @@ public class GraphTools {
         try {
             process.waitFor();
         } catch (InterruptedException e) {
-            System.err.println("[warning] dot2pdf interrupted");
+            Logger.getAnonymousLogger().warning("dot2pdf interrupted");
         }
     }
 

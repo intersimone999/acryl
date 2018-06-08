@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
@@ -23,12 +24,12 @@ public class APIVersionExtractor extends CommonRunner {
     public void run(String[] args) throws Exception {
         checkAndInitialize(args);
 
-        apkContext.setClassNotFoundHandler(className -> System.err.println("Class not found: " + className));
+        apkContext.setClassNotFoundHandler(className -> Logger.getAnonymousLogger().warning("Class not found: " + className));
 
-        System.out.println("Labeling methods...");
+        Logger.getAnonymousLogger().info("Labeling methods...");
         VersionMethodCache cache = new VersionMethodCache(apkContext);
         cache.build();
-        System.out.println("All method labeled!");
+        Logger.getAnonymousLogger().info("All method labeled!");
 
         String appName      = apk.getPackageName();
         String appVersion   = apk.getVersion();
@@ -36,10 +37,13 @@ public class APIVersionExtractor extends CommonRunner {
         String appSdkTrg    = String.valueOf(apk.getTargetSDKVersion());
 
         File graphDumpDirectory = new File("graph_dumps/" + appName);
-        if (!graphDumpDirectory.exists())
-            graphDumpDirectory.mkdirs();
+        if (!graphDumpDirectory.exists()) {
+            boolean mkdirsResult = graphDumpDirectory.mkdirs();
+            //noinspection PointlessBooleanExpression
+            assert mkdirsResult == true;
+        }
 
-        System.out.println("Starting analysis...");
+        Logger.getAnonymousLogger().info("Starting analysis...");
         IDProvider idProvider = new IDProvider();
         try (PrintWriter writer = new PrintWriter(outputFile)) {
             writer.println("id\tapp\tversion\tsdk_min\tsdk_trg\tcheck\tmethod\tapis");
@@ -93,13 +97,13 @@ public class APIVersionExtractor extends CommonRunner {
                             ipcfg.exportGraph(dotFile);
 //                            GraphTools.getInstance().dot2pdf(dotFile, pdfFile);
                         } catch (IOException e) {
-                            System.err.println("Error exporting graph " + id);
+                            Logger.getAnonymousLogger().severe("Error exporting graph " + id);
                         }
                     }
                 }
             }
         }
-        System.out.println("All done!");
+        Logger.getAnonymousLogger().info("All done!");
     }
 
     public static void main(String[] args) throws Exception {

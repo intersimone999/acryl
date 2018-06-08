@@ -3,6 +3,7 @@ package it.unimol.sdkanalyzer.analysis;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
@@ -10,7 +11,7 @@ import java.io.IOException;
 public class MockVersionMethodCache implements IVersionMethodCache {
     @Override
     public void build() {
-        System.out.println("[MOCK] Mocking cache building (this should never happen...)");
+        Logger.getAnonymousLogger().info("[MOCK] Mocking cache building (this should never happen...)");
     }
 
     @Override
@@ -25,6 +26,6 @@ public class MockVersionMethodCache implements IVersionMethodCache {
 
     @Override
     public void saveEntry(MethodContext methodContext, SDKInfo sdkInfo) {
-        System.out.println("[MOCK] Mocking save entry (this should never happen...)");
+        Logger.getAnonymousLogger().info("[MOCK] Mocking save entry (this should never happen...)");
     }
 }

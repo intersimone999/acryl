@@ -7,6 +7,7 @@ import it.unimol.sdkanalyzer.lifetime.APILifetime;
 import it.unimol.sdkanalyzer.rules.Rule;
 import it.unimol.sdkanalyzer.rules.CombinedViolationDetector;
 import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
+import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -23,14 +24,14 @@ public class ForwardCompatibilityImprovementDetector extends SingleRuleViolation
     }
 
     @Override
-    public boolean violatesRule(ApkContainer apk, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) throws IOException {
+    public boolean violatesRule(ApkContainer apk, MethodContext methodContext, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) {
         if (rule.getTrueApis().size() == 0)
             return false;
 
         if (!apisInCode.containsAll(rule.getTrueApis()))
             return false;
 
-        if (codeCheck != null)
+        if (!codeCheck.isNull())
             return false;
 
         for (String api : rule.getTrueApis()) {
@@ -44,6 +45,7 @@ public class ForwardCompatibilityImprovementDetector extends SingleRuleViolation
     }
 
     public CombinedViolationDetector.RuleViolationReport buildReport(
+            ApkContainer apk,
             Rule rule,
             VersionChecker checkToImplement,
             VersionChecker actualCheck,
@@ -52,21 +54,39 @@ public class ForwardCompatibilityImprovementDetector extends SingleRuleViolation
     ) {
         String alternativeApisString = StringUtils.join(alternativeApis, " --- ");
         StringBuilder messageBuilder = new StringBuilder("[Info] ");
-        if (alternativeApis.containsAll(usedApis)) {
+
+        int minSdk;
+        try {
+            minSdk = apk.getMinSDKVersion();
+        } catch (IOException e) {
+            minSdk = 0;
+        }
+
+        if (minSdk > rule.getChecker().getCheckedVersion()) {
+            if (alternativeApis.size() > 0) {
+                messageBuilder.append("You should use alternative APIs, since you do not support old Android versions (")
+                        .append(checkToImplement.toString())
+                        .append("). Please, use: ")
+                        .append(alternativeApisString)
+                        .append(".");
+            } else {
+                messageBuilder.append("You should not use these APIs, which are commonly used in old Android versions which you do not support (")
+                        .append(checkToImplement.toString())
+                        .append(").");
+            }
+        } else if (alternativeApis.containsAll(usedApis)) {
             // Wrong Contextual Usage
 
-            messageBuilder.append("The APIs you are using should be used in a different way in newer Android releases(")
+            messageBuilder.append("The APIs you are using should be used in a different way in newer Android versions (")
                     .append(checkToImplement.getInverse(true).toString())
-                    .append("). ")
-                    .append("Consider using: ")
+                    .append("). Consider using: ")
                     .append(alternativeApisString)
                     .append(".");
         } else if (alternativeApis.size() == 0) {
             // Case of Version-Specific Control
             messageBuilder.append("The APIs you are using should be used only in older Android versions (")
                     .append(checkToImplement.toString())
-                    .append("). ")
-                    .append("Add a check.");
+                    .append("). Add a check.");
         } else {
             messageBuilder.append("You should use these APIs differently in newer Android releases (")
                     .append(checkToImplement.getInverse(true))

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,6 +36,7 @@ public class APILifetime {
         return this.lifeMap.size();
     }
 
+    @SuppressWarnings("RegExpRedundantEscape")
     public static APILifetime load(File file) throws IOException {
         Map<String, APILife> result = new HashMap<>();
         Pattern pattern = Pattern.compile("<(.*): ([^ ]+) ([^(]+)\\(([^)]*)\\)>:\\[([0-9]+),([0-9]+)\\]");
@@ -84,7 +86,7 @@ public class APILifetime {
 
         for (String walaMethodToRemove : spurious.keySet()) {
             result.remove(walaMethodToRemove);
-            System.err.println("[Info] Removing spurious signature: " + walaMethodToRemove + " for " + spurious.get(walaMethodToRemove));
+            Logger.getAnonymousLogger().info("Removing spurious signature: " + walaMethodToRemove + " for " + spurious.get(walaMethodToRemove));
         }
 
         return new APILifetime(result);

@@ -5,11 +5,12 @@ import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
+import com.ibm.wala.shrikeCT.AnnotationsReader;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.*;
+import com.ibm.wala.types.annotations.Annotation;
 import it.unimol.sdkanalyzer.analysis.AugmentedSymbolTable;
 import it.unimol.sdkanalyzer.static_analysis.sequence.MethodSequence;
-import it.unimol.sdkanalyzer.static_analysis.utils.LightIDG;
 
 import java.util.*;
 
@@ -20,7 +21,6 @@ public class MethodContext {
     private IMethod method;
     private IR intermediateRepresentation;
     private AugmentedSymbolTable augmentedSymbolTable;
-    private LightIDG idg;
 
     private ClassContext context;
 
@@ -54,15 +54,6 @@ public class MethodContext {
         return context;
     }
 
-    public LightIDG getInstructionDependencies() {
-        if (this.idg == null) {
-            this.idg = new LightIDG(this);
-            this.idg.build();
-        }
-
-        return this.idg;
-    }
-
     public JarContext getJarContext() {
         return context.getJarContext();
     }
@@ -77,6 +68,39 @@ public class MethodContext {
 
     public CGNode getCGNode() {
         return this.getJarContext().getCallGraph().getNode(this.method, Everywhere.EVERYWHERE);
+    }
+
+    public boolean isDeprecated() {
+        for (Annotation annotation : method.getAnnotations()) {
+            if (annotation.getType().getName().toString().equals("Ljava/lang/Deprecated"))
+                return true;
+        }
+
+        return false;
+    }
+
+    public boolean isForcingDetectionSkip() {
+        // TODO define an annotation through which developers can force the tool to skip check on a method/class
+        for (Annotation annotation : method.getAnnotations()) {
+            if (annotation.getType().getName().toString().equals("Lit/unimol/sdkanalyzer/ForceSkip")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public int getTargetAndroidSDK() {
+        for (Annotation annotation : method.getAnnotations()) {
+            if (annotation.getType().getName().toString().equals("Landroid/annotation/TargetApi")) {
+                AnnotationsReader.ElementValue value = annotation.getNamedArguments().get("value");
+                if (value instanceof AnnotationsReader.ConstantElementValue)
+                    if (((AnnotationsReader.ConstantElementValue) value).val instanceof Integer)
+                        return ((Integer) ((AnnotationsReader.ConstantElementValue) value).val);
+            }
+        }
+
+        return 0;
     }
 
     public MethodSequence extractMethodSequence(int instructionNumber) {
@@ -124,7 +148,9 @@ public class MethodContext {
         }
 
         while (!useQueue.isEmpty()) {
-            int useToAnalyze = useQueue.poll();
+            Integer useToAnalyze = useQueue.poll();
+            assert useToAnalyze != null;
+
             analyzedUses.add(useToAnalyze);
 
             //If it is used a parameter...

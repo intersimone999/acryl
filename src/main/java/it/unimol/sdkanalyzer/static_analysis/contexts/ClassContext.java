@@ -3,6 +3,7 @@ package it.unimol.sdkanalyzer.static_analysis.contexts;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.types.Selector;
+import com.ibm.wala.types.annotations.Annotation;
 
 import java.util.*;
 
@@ -30,6 +31,17 @@ public class ClassContext {
         IMethod method = iClass.getMethod(Selector.make(selector));
 
         return this.resolveMethodContext(method);
+    }
+
+    public boolean isForcingDetectionSkip() {
+        // TODO define an annotation through which developers can force the tool to skip check on a method/class
+        for (Annotation annotation : iClass.getAnnotations()) {
+            if (annotation.getType().getName().toString().equals("Lit/unimol/sdkanalyzer/ForceSkip")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public MethodContext resolveMethodContext(IMethod method) {

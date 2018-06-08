@@ -5,6 +5,7 @@ import it.unimol.sdkanalyzer.android.ApkContainer;
 import it.unimol.sdkanalyzer.rules.Rule;
 import it.unimol.sdkanalyzer.rules.CombinedViolationDetector;
 import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
+import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -21,10 +22,10 @@ public class WrongCheckDetector extends SingleRuleViolationDetector {
     private static final String MESSAGE_WVERSION = "[Critical] You use a wrong version checking. You should check for %s, but you check for %s";
 
     @Override
-    public boolean violatesRule(ApkContainer apk, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) throws IOException {
+    public boolean violatesRule(ApkContainer apk, MethodContext methodContext, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) {
         VersionChecker ruleCheck = rule.getChecker().copy();
 
-        if (codeCheck == null)
+        if (codeCheck.isNull())
             return false;
 
         if (apisInCode.containsAll(rule.getFalseApis()) && rule.getFalseApis().size() > 0) {
@@ -87,6 +88,7 @@ public class WrongCheckDetector extends SingleRuleViolationDetector {
     }
 
     public CombinedViolationDetector.RuleViolationReport buildReport(
+            ApkContainer apk,
             Rule rule,
             VersionChecker checkToImplement,
             VersionChecker actualCheck,

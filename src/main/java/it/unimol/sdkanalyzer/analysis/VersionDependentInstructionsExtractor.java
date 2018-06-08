@@ -1,12 +1,14 @@
 package it.unimol.sdkanalyzer.analysis;
 
+import com.ibm.wala.ssa.ISSABasicBlock;
+import com.ibm.wala.ssa.SSACFG;
 import com.ibm.wala.ssa.SSAConditionalBranchInstruction;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 import it.unimol.sdkanalyzer.static_analysis.utils.CFGVisitor;
 import it.unimol.sdkanalyzer.graphs.SubCFG;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Labels methods that return the SDK version number with either:
@@ -22,40 +24,75 @@ public class VersionDependentInstructionsExtractor {
         this.versionMethodCache = versionMethodCache;
     }
 
-    public Map<VersionChecker, SubCFG> extractAllSubCFGs(MethodContext methodContext) {
+    public Set<SubCFG> extractVersionIndependentCFGs(MethodContext methodContext, Collection<SubCFG> checkedSubCFG) {
         if (methodContext.getIntermediateRepresentation() == null)
             return null;
 
-        CFGVisitor visitor = new CFGVisitor(methodContext);
+        Set<SubCFG> result = new HashSet<>();
+        Set<ISSABasicBlock> checkedBlocks = new HashSet<>();
+        for (SubCFG subCFG : checkedSubCFG) {
+            checkedBlocks.addAll(subCFG.vertexSet());
+        }
 
-        AugmentedSymbolTable symbolTable = methodContext.getAugmentedSymbolTable();
-        symbolTable.update(this.versionMethodCache);
-
-        Map<VersionChecker, SubCFG> result = new HashMap<>();
-
-        visitor.visit(block -> {
-            if (block.getLastInstruction() instanceof SSAConditionalBranchInstruction) {
-                SSAConditionalBranchInstruction lastInstruction = (SSAConditionalBranchInstruction) block.getLastInstruction();
-
-                SDKInfo checker = symbolTable.getCheckingInstructionsTable().get(lastInstruction.iindex);
-                try {
-                    visitor.visitConditionalBranchingBlock(block,
-                            trueSubCFG -> {
-                                VersionChecker subChecker = checker != null ? checker.getVersionFor(true) : null;
-                                result.put(subChecker, trueSubCFG);
-                            },
-
-                            falseSubCFG -> {
-                                VersionChecker subChecker = checker != null ? checker.getVersionFor(false) : null;
-                                result.put(subChecker, falseSubCFG);
-                            }
-                    );
-                } catch (CFGVisitor.NoEndingBlockException e) {
-                    System.err.println("\tCould not find ending block of " + block.toString());
-                }
+        SSACFG cfg = methodContext.getIntermediateRepresentation().getControlFlowGraph();
+        for (ISSABasicBlock basicBlock : cfg) {
+            if (!checkedBlocks.contains(basicBlock)) {
+                SubCFG subCFG = new SubCFG(cfg, Collections.singleton(basicBlock));
+                result.add(subCFG);
             }
-        });
+        }
 
+//        CFGVisitor visitor = new CFGVisitor(methodContext);
+//
+//        AugmentedSymbolTable symbolTable = methodContext.getAugmentedSymbolTable();
+//        symbolTable.update(this.versionMethodCache);
+//
+//
+//
+//        visitor.visit(block -> {
+//            if (block.getLastInstruction() instanceof SSAConditionalBranchInstruction) {
+//                SSAConditionalBranchInstruction lastInstruction = (SSAConditionalBranchInstruction) block.getLastInstruction();
+//
+//                SDKInfo checker = symbolTable.getCheckingInstructionsTable().get(lastInstruction.iindex);
+//                try {
+//                    visitor.visitConditionalBranchingBlock(block,
+//                            trueSubCFG -> {
+//                                VersionChecker subChecker = checker != null ? checker.getVersionFor(true) : new VersionChecker.NullChecker();
+//                                result.put(subChecker, trueSubCFG);
+//                            },
+//
+//                            falseSubCFG -> {
+//                                VersionChecker subChecker = checker != null ? checker.getVersionFor(false) : new VersionChecker.NullChecker();
+//                                result.put(subChecker, falseSubCFG);
+//                            }
+//                    );
+//                } catch (CFGVisitor.NoEndingBlockException e) {
+//                    Logger.getAnonymousLogger().warning("\tCould not find ending block of " + block.toString());
+//                }
+//            }
+//        });
+//
+//        // Forces the removal of actually checked blocks.
+//        Set<ISSABasicBlock> checkedBlocks   = new HashSet<>();
+//        for (Map.Entry<VersionChecker, SubCFG> entry : result.entrySet()) {
+//            if (!(entry.getKey() instanceof VersionChecker.NullChecker))
+//                checkedBlocks.addAll(entry.getValue().vertexSet());
+//        }
+//
+//        for (Map.Entry<VersionChecker, SubCFG> entry : result.entrySet()) {
+//            if (entry.getKey() instanceof VersionChecker.NullChecker){
+//                entry.getValue().removeAllVertices(checkedBlocks);
+//            }
+//        }
+//
+//        for (Map.Entry<VersionChecker, SubCFG> entry : result.entrySet()) {
+//            if (entry.getKey() instanceof VersionChecker.NullChecker){
+//                entry.getValue().removeAllVertices(checkedBlocks);
+//            }
+//        }
+
+        // Warning: the null checkers may not be incomplete graphs because of missing edges (caused by the removal of actually
+        // checked blocks).
         return result;
     }
 
@@ -89,7 +126,7 @@ public class VersionDependentInstructionsExtractor {
                                 }
                         );
                     } catch (CFGVisitor.NoEndingBlockException e) {
-                        System.err.println("\tCould not find ending block of " + block.toString());
+                        Logger.getAnonymousLogger().warning("\tCould not find ending block of " + block.toString());
                     }
                 }
             }

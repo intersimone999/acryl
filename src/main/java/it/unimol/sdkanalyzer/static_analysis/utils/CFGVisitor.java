@@ -14,7 +14,7 @@ import java.util.*;
 public class CFGVisitor {
     private final SSACFG cfg;
     private final MethodContext context;
-    private LightIDG idg;
+    private GraphUtils.BackDominators<ISSABasicBlock> backDominators;
 
     public CFGVisitor(MethodContext context) {
         this.context = context;
@@ -73,14 +73,13 @@ public class CFGVisitor {
         assert this.cfg.getNormalSuccessors(branchingBlock).size() > 1;
         assert branchingBlock.getLastInstruction() instanceof SSAConditionalBranchInstruction;
 
-        if (this.idg == null) {
-            this.idg = new LightIDG(context);
-            this.idg.build();
+        if (backDominators == null) {
+            backDominators = GraphUtils.buildBackDominators(this.cfg);
         }
 
         SSAConditionalBranchInstruction branchInstruction = (SSAConditionalBranchInstruction) branchingBlock.getLastInstruction();
 
-        int endingBlockNumber = this.idg.getMinimumBlockWithPredecessorsOfBlock(branchingBlock);
+        int endingBlockNumber = GraphUtils.getBackDominator(this.backDominators, branchingBlock).getNumber();
 
         if (endingBlockNumber == -1)
             throw new NoEndingBlockException();

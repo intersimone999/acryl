@@ -26,18 +26,25 @@ public class IPCFG extends DefaultDirectedGraph<InternalBlock, DefaultEdge> {
     private JarContext context;
     private InternalBlock head;
     private InternalBlock tail;
+    private boolean interProcedural;
 
     private Map<String, InternalBlock> includedMethods;
 
-    public IPCFG(JarContext context) {
+    public IPCFG(JarContext context, boolean interProcedural) {
         super(DefaultEdge.class);
 
         this.head = null;
         this.tail = null;
 
+        this.interProcedural = interProcedural;
+
         this.context = context;
 
         this.includedMethods = new HashMap<>();
+    }
+
+    public boolean isInterProcedural() {
+        return interProcedural;
     }
 
     protected void setHead(InternalBlock head) {
@@ -104,7 +111,11 @@ public class IPCFG extends DefaultDirectedGraph<InternalBlock, DefaultEdge> {
     }
 
     public static IPCFG buildIPCFG(JarContext jarContext, SubCFG subCFG) throws IOException {
-        IPCFG ipcfg = new IPCFG(jarContext);
+        return buildIPCFG(jarContext, subCFG, true);
+    }
+
+    public static IPCFG buildIPCFG(JarContext jarContext, SubCFG subCFG, boolean interProcedural) throws IOException {
+        IPCFG ipcfg = new IPCFG(jarContext, interProcedural);
         InternalBlock[] headAndTail = buildFromSubCFG(ipcfg, jarContext, subCFG);
 
         ipcfg.setHead(headAndTail[0]);
@@ -152,16 +163,16 @@ public class IPCFG extends DefaultDirectedGraph<InternalBlock, DefaultEdge> {
 
                     MethodContext calledMethodContext = null;
                     String calledMethodSignature;
-                    boolean isInJar = false;
+                    boolean isClassInJar = false;
                     try {
                         calledMethodContext = classContext.resolveMethodContext(methodSelector);
                         calledMethodSignature = calledMethodContext.getIMethod().getSignature();
-                        isInJar = jarContext.isClassInJar(jarContext.resolveClassContext(calledMethodContext.getIMethod().getDeclaringClass()), false);
+                        isClassInJar = jarContext.isClassInJar(jarContext.resolveClassContext(calledMethodContext.getIMethod().getDeclaringClass()), false);
                     } catch (RuntimeException e) {
                         calledMethodSignature = "<??? Not resolved ???>";
                     }
 
-                    if (isInJar) {
+                    if (ipcfg.isInterProcedural() && isClassInJar) {
                         InternalBlock otherHead;
                         InternalBlock otherTail;
                         if (!ipcfg.includesMethod(calledMethodSignature)) {
@@ -199,6 +210,8 @@ public class IPCFG extends DefaultDirectedGraph<InternalBlock, DefaultEdge> {
         }
 
         if (tailID != null) {
+            assert currentInternalBlock != null;
+
             currentInternalBlock.setIdentifier(tailID);
             ipcfg.includedMethods.put(tailID, currentInternalBlock);
         }
@@ -224,15 +237,13 @@ public class IPCFG extends DefaultDirectedGraph<InternalBlock, DefaultEdge> {
         SSACFG cfg = methodContext.getIntermediateRepresentation().getControlFlowGraph();
         SubCFG subCFG = new SubCFG(cfg);
 
-        InternalBlock[] headAndTail = buildFromSubCFG(
+        return buildFromSubCFG(
                 ipcfg,
                 jarContext,
                 subCFG,
                 methodContext.getIMethod().getSignature(),
                 methodContext.getIMethod().getSignature() + "$TAIL"
         );
-
-        return headAndTail;
     }
 
     public synchronized void exportGraph(File destination) throws IOException {

@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -82,12 +83,12 @@ public class JarContext {
                 this.callGraph = cgb.makeCallGraph(analysisOptions, new MonitorUtil.IProgressMonitor() {
                     @Override
                     public void beginTask(String s, int i) {
-                        System.out.println("Task: " + s + " " + i);
+                        Logger.getAnonymousLogger().info("Task: " + s + " " + i);
                     }
 
                     @Override
                     public void subTask(String s) {
-                        System.out.println("Subtask: " + s);
+                        Logger.getAnonymousLogger().info("Subtask: " + s);
                     }
 
                     @Override
@@ -102,12 +103,12 @@ public class JarContext {
 
                     @Override
                     public void done() {
-                        System.out.println("Done!");
+                        Logger.getAnonymousLogger().info("Done!");
                     }
 
                     @Override
                     public void worked(int i) {
-                        System.out.println("Worked " + i);
+                        Logger.getAnonymousLogger().info("Worked " + i);
                     }
 
                     @Override
@@ -197,6 +198,23 @@ public class JarContext {
         }
     }
 
+    public MethodContext resolveMethodContext(String completeMethodSignature) {
+        int parameterStart = completeMethodSignature.lastIndexOf('(');
+        if (parameterStart == -1)
+            throw new RuntimeException("Invalid signature: it must contain parameters of the method");
+
+        int lastDotIndex = completeMethodSignature.substring(0, parameterStart).lastIndexOf('.');
+
+        if (lastDotIndex == -1)
+            throw new RuntimeException("Invalid signature: it must contain both the class an the method");
+
+        String classSignature   = completeMethodSignature.substring(0, lastDotIndex);
+        String methodSignature  = completeMethodSignature.substring(lastDotIndex+1);
+
+        ClassContext classContext = this.resolveClassContext(classSignature);
+        return classContext.resolveMethodContext(methodSignature);
+    }
+
     public Collection<IClass> getClassesInContext(boolean keepIgnored) {
         Collection<IClass> result = new HashSet<>();
         for (IClass iClass : this.fullHierarchy) {
@@ -254,9 +272,7 @@ public class JarContext {
 
     public File[] getCompleteClasspath() {
         File[] completeClasspath = new File[this.dependencies.length+1];
-        for (int i = 0; i < dependencies.length; i++) {
-            completeClasspath[i] = dependencies[i];
-        }
+        System.arraycopy(dependencies, 0, completeClasspath, 0, dependencies.length);
         completeClasspath[dependencies.length] = getJarPath();
 
         return completeClasspath;

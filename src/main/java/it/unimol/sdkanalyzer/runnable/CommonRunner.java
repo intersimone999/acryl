@@ -9,6 +9,7 @@ import it.unimol.sdkanalyzer.static_analysis.contexts.JarContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
@@ -46,14 +47,14 @@ public class CommonRunner {
         apk = new ApkContainer(apkFile);
         jarFile = new File(apkFile.getParentFile(), apkFile.getName().replace(".apk", ".jar"));
         if (!jarFile.exists()) {
-            System.out.println("Extracting jar from apk...");
+            Logger.getAnonymousLogger().info("Extracting jar from apk...");
             try {
                 AndroidToolkit.getInstance().dex2jar().run(apk, jarFile);
             } catch (Dex2Jar.DexException e) {
                 throw new RuntimeException("Unable to undex, verision not supported");
             }
         } else {
-            System.out.println("Reusing existing jar...");
+            Logger.getAnonymousLogger().info("Reusing existing jar...");
         }
 
         apkContext = GlobalContext.getAndroidContext(jarFile.getAbsolutePath(), new File[] {

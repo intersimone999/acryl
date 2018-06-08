@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
@@ -20,7 +21,7 @@ public class SubCFG extends DefaultDirectedGraph<ISSABasicBlock, DefaultEdge> im
     private MethodContext methodContext;
     private List<Integer> involvedJavaLines;
 
-    public SubCFG(SSACFG cfg, Collection<ISSABasicBlock> blocks) {
+    public SubCFG(SSACFG cfg, boolean addExceptional, Collection<ISSABasicBlock> blocks) {
         super(DefaultEdge.class);
 
         for (ISSABasicBlock block : blocks) {
@@ -33,10 +34,22 @@ public class SubCFG extends DefaultDirectedGraph<ISSABasicBlock, DefaultEdge> im
                     this.addEdge(block, successor);
                 }
             }
+
+            if (addExceptional) {
+                for (ISSABasicBlock successor : cfg.getExceptionalSuccessors(block)) {
+                    if (blocks.contains(successor)) {
+                        this.addEdge(block, successor);
+                    }
+                }
+            }
         }
     }
 
-    public SubCFG(SSACFG cfg) {
+    public SubCFG(SSACFG cfg, Collection<ISSABasicBlock> blocks) {
+        this(cfg, true, blocks);
+    }
+
+    public SubCFG(SSACFG cfg, boolean addExceptional) {
         super(DefaultEdge.class);
 
         for (ISSABasicBlock block : cfg) {
@@ -47,7 +60,17 @@ public class SubCFG extends DefaultDirectedGraph<ISSABasicBlock, DefaultEdge> im
             for (ISSABasicBlock successor : cfg.getNormalSuccessors(block)) {
                 this.addEdge(block, successor);
             }
+
+            if (addExceptional) {
+                for (ISSABasicBlock successor : cfg.getExceptionalSuccessors(block)) {
+                    this.addEdge(block, successor);
+                }
+            }
         }
+    }
+
+    public SubCFG(SSACFG cfg) {
+        this(cfg, true);
     }
 
     public void setMethodContext(MethodContext methodContext) {
@@ -82,6 +105,7 @@ public class SubCFG extends DefaultDirectedGraph<ISSABasicBlock, DefaultEdge> im
                 }
             }
         } catch (Exception e) {
+            Logger.getAnonymousLogger().warning("Unable to retrieve source code line information.");
         }
     }
 

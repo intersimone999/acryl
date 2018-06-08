@@ -95,22 +95,6 @@ public class DatasetExtractor {
         return missingCounter.missing;
     }
 
-    public ProbabilisticSequenceDataset extractAndUseDataset() throws IOException {
-        return extractAndUseDataset(false);
-    }
-
-    public ProbabilisticSequenceDataset extractAndUseDataset(boolean ignoreMissingClasses) throws IOException {
-        Collection<ProbabilisticMethodSequence> sequences = this.extractAllSequences(e -> {
-            if (e instanceof RuntimeException && e.getMessage().startsWith("No such a class")) {
-                System.err.println(e.getMessage());
-                return true;
-            } else {
-                return ignoreMissingClasses && e instanceof RuntimeException && e.getMessage().contains("in no given context");
-            }
-        });
-        return ProbabilisticSequenceDataset.getFirstInstance(sequences);
-    }
-
     public interface ExceptionHandler {
         boolean handleException(Exception e);
     }
