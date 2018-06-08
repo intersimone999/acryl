@@ -45,7 +45,7 @@ public class WrongCheckDetector extends SingleRuleViolationDetector {
                 shouldBeUsedInOldVersions != actuallyUsedInOldVersions ||
                 shouldBeUsedInNewVersions != actuallyUsedInNewVersions) {
             Logger.getAnonymousLogger().log(
-                    Level.WARNING,
+                    Level.FINEST,
                     "There was a strange check in the app: " +
                             codeCheck.toString() +
                             " instead of " +

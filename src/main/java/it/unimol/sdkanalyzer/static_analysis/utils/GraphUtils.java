@@ -9,6 +9,7 @@ import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.traverse.DepthFirstIterator;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
@@ -27,8 +28,8 @@ public class GraphUtils {
             return backDominatorTree.getEdgeSource(edge);
         }
 
-        assert false : "Cannot arrive here! Something went wrong...";
-        throw new RuntimeException("Something went wrong with dominator trees...");
+        Logger.getAnonymousLogger().severe("Something went wrong with the dominator tree. Cannot retrieve the end of the block.");
+        return null;
     }
 
     private static <V> DirectedGraph<V, DefaultEdge> reverseGraph(DirectedGraph<V, DefaultEdge> graph) {

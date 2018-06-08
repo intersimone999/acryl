@@ -77,15 +77,14 @@ public class CFGVisitor {
 
         SSAConditionalBranchInstruction branchInstruction = (SSAConditionalBranchInstruction) branchingBlock.getLastInstruction();
 
-        int endingBlockNumber = GraphUtils.getBackDominator(this.backDominators, branchingBlock).getNumber();
+        ISSABasicBlock endingBlock  = GraphUtils.getBackDominator(this.backDominators, branchingBlock);
 
-        if (endingBlockNumber == -1)
+        if (endingBlock == null)
             throw new NoEndingBlockException();
-        ISSABasicBlock lastBlock = cfg.getBasicBlock(endingBlockNumber);
 
         for (ISSABasicBlock normalSuccessor : this.cfg.getNormalSuccessors(branchingBlock)) {
             List<ISSABasicBlock> involvedBlocks = new ArrayList<>();
-            this.visit(normalSuccessor, lastBlock, involvedBlocks::add);
+            this.visit(normalSuccessor, endingBlock, involvedBlocks::add);
 
             SubCFG subCFG = new SubCFG(this.cfg, involvedBlocks);
 
