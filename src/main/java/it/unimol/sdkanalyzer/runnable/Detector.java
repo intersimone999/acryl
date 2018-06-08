@@ -117,7 +117,7 @@ public class Detector extends CommonRunner {
                     IPCFG ipcfg = IPCFG.buildIPCFG(apkContext, entry.getValue(), false);
                     entry.getValue().setMethodContext(methodContext);
 
-                    Collection<String> apis = ipcfg.getCalledAPIs("android");
+                    Collection<String> apis = ipcfg.getCalledAPIs(Collections.singletonList("android"));
                     List<CombinedViolationDetector.RuleViolationReport> reports = new ArrayList<>();
                     for (Rule rule : ruleset.matchingRules(apis)) {
                         CombinedViolationDetector.RuleViolationReport report = detector.violatesRule(methodContext, entry.getKey(), rule, apis);

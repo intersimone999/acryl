@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -23,6 +24,15 @@ import java.util.logging.Logger;
 public class APIVersionExtractor extends CommonRunner {
     public void run(String[] args) throws Exception {
         checkAndInitialize(args);
+
+        boolean forceGraphExport = false;
+        if (args.length > 6) {
+            for (int i = 5; i < args.length; i++) {
+                if (args[i].equals("--graph-export"))
+                    forceGraphExport = true;
+            }
+        }
+
 
         apkContext.setClassNotFoundHandler(className -> Logger.getAnonymousLogger().warning("Class not found: " + className));
 
@@ -86,18 +96,18 @@ public class APIVersionExtractor extends CommonRunner {
                         writer.print(methodContext.getIMethod().getSignature());
                         writer.print("\t");
 
-                        String calledApis = StringUtils.join(ipcfg.getCalledAPIs("android"), "&");
+                        String calledApis = StringUtils.join(ipcfg.getCalledAPIs(Collections.singletonList(PACKAGE_UNDER_ANALYSIS)), "&");
                         writer.print(calledApis);
                         writer.print("\n");
 
-                        try {
-                            File dotFile = new File(graphDumpDirectory, appVersion + "|" + id + ".dot");
-//                            File pdfFile = new File(graphDumpDirectory, appVersion + "|" + id + ".pdf");
+                        if (forceGraphExport) {
+                            try {
+                                File dotFile = new File(graphDumpDirectory, appVersion + "|" + id + ".dot");
 
-                            ipcfg.exportGraph(dotFile);
-//                            GraphTools.getInstance().dot2pdf(dotFile, pdfFile);
-                        } catch (IOException e) {
-                            Logger.getAnonymousLogger().severe("Error exporting graph " + id);
+                                ipcfg.exportGraph(dotFile);
+                            } catch (IOException e) {
+                                Logger.getAnonymousLogger().severe("Error exporting graph " + id);
+                            }
                         }
                     }
                 }

@@ -4,17 +4,22 @@ import com.ibm.wala.ipa.cha.ClassHierarchyException;
 import it.unimol.sdkanalyzer.android.AndroidToolkit;
 import it.unimol.sdkanalyzer.android.ApkContainer;
 import it.unimol.sdkanalyzer.android.Dex2Jar;
+import it.unimol.sdkanalyzer.static_analysis.contexts.AndroidJarContext;
 import it.unimol.sdkanalyzer.static_analysis.contexts.GlobalContext;
 import it.unimol.sdkanalyzer.static_analysis.contexts.JarContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
  */
 public class CommonRunner {
+    protected static final String PACKAGE_UNDER_ANALYSIS = "android";
+
     protected File apkFile;
     protected File outputFile;
     protected ApkContainer apk;
@@ -30,6 +35,8 @@ public class CommonRunner {
                     "(4) path to APK, " +
                     "(5) output file");
         }
+
+        AndroidJarContext.setAndroidPackageNames(Collections.singletonList(PACKAGE_UNDER_ANALYSIS));
 
         AndroidToolkit.setBuildToolsPath(args[0]);
         AndroidToolkit.setAndroidSDK(args[1]);

@@ -16,6 +16,12 @@ import java.util.zip.ZipInputStream;
  * @author Simone Scalabrino.
  */
 public class AndroidJarContext extends JarContext {
+    private static List<String> androidPackageNames;
+
+    public static void setAndroidPackageNames(List<String> androidPackageNames) {
+        AndroidJarContext.androidPackageNames = androidPackageNames;
+    }
+
     public AndroidJarContext(String jarPath) throws IOException, ClassHierarchyException {
         super(jarPath);
     }
@@ -33,7 +39,13 @@ public class AndroidJarContext extends JarContext {
         List<IClass> resultingClasses = new ArrayList<>();
         ZipInputStream zip = new ZipInputStream(new FileInputStream(super.jarPath));
         for (ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
-            if (entry.getName().startsWith("android"))
+            boolean isSystemPackage = false;
+            for (String androidPackageName : androidPackageNames) {
+                if (entry.getName().startsWith(androidPackageName))
+                    isSystemPackage = true;
+            }
+
+            if (!isSystemPackage)
                 continue;
 
             if (!entry.isDirectory() && entry.getName().endsWith(".class")) {

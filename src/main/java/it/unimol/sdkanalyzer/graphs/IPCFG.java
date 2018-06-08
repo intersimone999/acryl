@@ -8,13 +8,11 @@ import it.unimol.sdkanalyzer.static_analysis.contexts.ClassContext;
 import it.unimol.sdkanalyzer.static_analysis.contexts.JarContext;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 import org.jgrapht.Graph;
-import org.jgrapht.ext.DOTExporter;
 import org.jgrapht.ext.StringComponentNameProvider;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
@@ -64,10 +62,15 @@ public class IPCFG extends DefaultDirectedGraph<InternalBlock, DefaultEdge> {
     }
 
     public Collection<String> getCalledAPIs() {
-        return getCalledAPIs("");
+        return getCalledAPIs(new ArrayList<>());
     }
 
+    @Deprecated
     public Collection<String> getCalledAPIs(String filter) {
+        return getCalledAPIs(Collections.singletonList(filter));
+    }
+
+    public Collection<String> getCalledAPIs(List<String> filters) {
         Set<String> apiCalls = new HashSet<>();
 
         for (InternalBlock internalBlock : this.vertexSet()) {
@@ -87,7 +90,18 @@ public class IPCFG extends DefaultDirectedGraph<InternalBlock, DefaultEdge> {
                     } catch (RuntimeException e) {
                         calledMethodSignature = "<??? Not resolved ???>";
                     }
-                    if (calledMethodSignature.startsWith(filter))
+
+                    boolean isOk = false;
+                    if (filters.size() == 0) {
+                        isOk = true;
+                    } else {
+                        for (String filter : filters) {
+                            if (calledMethodSignature.startsWith(filter))
+                                isOk = true;
+                        }
+                    }
+
+                    if (isOk)
                         apiCalls.add(calledMethodSignature);
                 }
             }
