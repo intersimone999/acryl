@@ -2,6 +2,7 @@ package it.unimol.sdkanalyzer.static_analysis.contexts;
 
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.shrikeCT.AnnotationsReader;
 import com.ibm.wala.types.Selector;
 import com.ibm.wala.types.annotations.Annotation;
 
@@ -31,6 +32,20 @@ public class ClassContext {
         IMethod method = iClass.getMethod(Selector.make(selector));
 
         return this.resolveMethodContext(method);
+    }
+
+    public int getTargetAndroidSDK() {
+        for (Annotation annotation : iClass.getAnnotations()) {
+            if (annotation.getType().getName().toString().equals("Landroid/annotation/TargetApi") ||
+                    annotation.getType().getName().toString().equals("Landroid/support/annotation/RequiresApi")) {
+                AnnotationsReader.ElementValue value = annotation.getNamedArguments().get("value");
+                if (value instanceof AnnotationsReader.ConstantElementValue)
+                    if (((AnnotationsReader.ConstantElementValue) value).val instanceof Integer)
+                        return ((Integer) ((AnnotationsReader.ConstantElementValue) value).val);
+            }
+        }
+
+        return 0;
     }
 
     public boolean isForcingDetectionSkip() {

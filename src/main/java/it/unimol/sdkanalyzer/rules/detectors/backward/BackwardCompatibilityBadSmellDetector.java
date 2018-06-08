@@ -35,7 +35,8 @@ public class BackwardCompatibilityBadSmellDetector extends SingleRuleViolationDe
         if (!codeCheck.isNull())
             return false;
 
-        if (methodContext.getTargetAndroidSDK() > rule.getChecker().getCheckedVersion()) {
+        if (methodContext.getTargetAndroidSDK() > rule.getChecker().getCheckedVersion() ||
+                methodContext.getClassContext().getTargetAndroidSDK() > rule.getChecker().getCheckedVersion()) {
             Logger.getAnonymousLogger().info("Checking of " + methodContext.getIMethod().getSignature() + " aborted because it has a compatible TargetApi");
             return false;
         }

@@ -92,7 +92,8 @@ public class MethodContext {
 
     public int getTargetAndroidSDK() {
         for (Annotation annotation : method.getAnnotations()) {
-            if (annotation.getType().getName().toString().equals("Landroid/annotation/TargetApi")) {
+            if (annotation.getType().getName().toString().equals("Landroid/annotation/TargetApi") ||
+                    annotation.getType().getName().toString().equals("Landroid/support/annotation/RequiresApi")) {
                 AnnotationsReader.ElementValue value = annotation.getNamedArguments().get("value");
                 if (value instanceof AnnotationsReader.ConstantElementValue)
                     if (((AnnotationsReader.ConstantElementValue) value).val instanceof Integer)
