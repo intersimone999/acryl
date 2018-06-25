@@ -1,0 +1,6 @@
+.idea
+*.jar
+*.apk
+*.iml
+target
+*.csv
