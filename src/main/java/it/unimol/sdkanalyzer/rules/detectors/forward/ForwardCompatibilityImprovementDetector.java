@@ -17,9 +17,11 @@ import java.util.Collection;
  * @author Simone Scalabrino.
  */
 public class ForwardCompatibilityImprovementDetector extends SingleRuleViolationDetector {
+    private final int apiLevel;
     private final APILifetime apiLifetime;
 
-    public ForwardCompatibilityImprovementDetector(APILifetime apiLifetime) {
+    public ForwardCompatibilityImprovementDetector(int apiLevel, APILifetime apiLifetime) {
+        this.apiLevel = apiLevel;
         this.apiLifetime = apiLifetime;
     }
 
@@ -37,7 +39,7 @@ public class ForwardCompatibilityImprovementDetector extends SingleRuleViolation
         for (String api : rule.getTrueApis()) {
             APILife apiLife = this.apiLifetime.getLifeFor(api);
 
-            if (apiLife.getMaxVersion() != -1)
+            if (apiLife.getMaxVersion() < apiLevel && apiLife.getMaxVersion() != -1)
                 return false;
         }
 

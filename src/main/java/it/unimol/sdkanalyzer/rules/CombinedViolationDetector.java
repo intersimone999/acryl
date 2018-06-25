@@ -24,16 +24,16 @@ public class CombinedViolationDetector {
     private final ApkContainer apk;
     private final SingleRuleViolationDetector[] detectors;
 
-    public CombinedViolationDetector(ApkContainer apk, APILifetime apiLifetime, JarContext context) {
+    public CombinedViolationDetector(ApkContainer apk, int apiLevel, APILifetime apiLifetime, JarContext context) {
         this.apk = apk;
         this.detectors = new SingleRuleViolationDetector[] {
-                new ForwardCompatibilityBugDetector(apiLifetime),
+                new ForwardCompatibilityBugDetector(apiLevel, apiLifetime),
                 new BackwardCompatibilityBugDetector(apiLifetime),
 
                 new ForwardCompatibilityBadSmellDetector(context),
                 new BackwardCompatibilityImprovementDetector(),
 
-                new ForwardCompatibilityImprovementDetector(apiLifetime),
+                new ForwardCompatibilityImprovementDetector(apiLevel, apiLifetime),
                 new BackwardCompatibilityImprovementDetector(),
 
                 new WrongCheckDetector()

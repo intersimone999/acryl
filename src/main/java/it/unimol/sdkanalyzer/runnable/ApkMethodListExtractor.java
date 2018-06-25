@@ -8,14 +8,16 @@ import it.unimol.sdkanalyzer.static_analysis.contexts.ClassContext;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
  */
-public class AndroidApiExtractor extends CommonRunner {
+public class ApkMethodListExtractor extends CommonRunner {
     public void run(String[] args) throws Exception {
         checkAndInitialize(args);
 
@@ -26,7 +28,7 @@ public class AndroidApiExtractor extends CommonRunner {
         String appSdkMin    = String.valueOf(apk.getMinSDKVersion());
         String appSdkTrg    = String.valueOf(apk.getTargetSDKVersion());
 
-        Map<String, Integer> data = new HashMap<>();
+        List<String> data = new ArrayList<>();
         for (IClass iClass : apkContext.getClassesInJar(false)) {
             ClassContext classContext = apkContext.resolveClassContext(iClass);
 
@@ -36,39 +38,20 @@ public class AndroidApiExtractor extends CommonRunner {
                 if (methodContext.getIntermediateRepresentation() == null)
                     continue;
 
-                for (SSAInstruction instruction : methodContext.getIntermediateRepresentation().getInstructions()) {
-                    if (instruction instanceof SSAAbstractInvokeInstruction) {
-                        SSAAbstractInvokeInstruction invokeInstruction = ((SSAAbstractInvokeInstruction) instruction);
-
-                        String className = invokeInstruction.getDeclaredTarget().getDeclaringClass().getName().toString();
-                        ClassContext calledClassContext = apkContext.resolveClassContext(className);
-
-                        String calledMethodSelector = invokeInstruction.getDeclaredTarget().getSelector().toString();
-
-                        String calledMethodSignature;
-                        try {
-                            MethodContext calledMethodContext = calledClassContext.resolveMethodContext(calledMethodSelector);
-                            calledMethodSignature = calledMethodContext.getIMethod().getSignature();
-                        } catch (RuntimeException e) {
-                            calledMethodSignature = "<??? Not resolved ???>";
-                        }
-                        if (calledMethodSignature.startsWith("android"))
-                            data.put(calledMethodSignature, data.getOrDefault(calledMethodSignature, 0) + 1);
-                    }
-                }
+                data.add(methodContext.getIMethod().getSignature());
             }
         }
 
         try (PrintWriter writer = new PrintWriter(outputFile)) {
-            writer.println("app\tversion\tapi\ttimes");
-            for (Map.Entry<String, Integer> entry : data.entrySet()) {
-                writer.println(appName + "\t" + appVersion + "\t" + entry.getKey() + "\t" + entry.getValue());
+            writer.println("app\tversion\tmethod");
+            for (String method : data) {
+                writer.println(appName + "\t" + appVersion + "\t" + method);
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
-        new AndroidApiExtractor().run(args);
+        new ApkMethodListExtractor().run(args);
     }
 
     private static class IDProvider {

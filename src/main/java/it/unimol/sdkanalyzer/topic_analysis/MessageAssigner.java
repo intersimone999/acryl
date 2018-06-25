@@ -4,27 +4,22 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.Range;
 import com.github.javaparser.TokenRange;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.body.CallableDeclaration;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.type.Type;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.types.TypeReference;
-import com.ibm.wala.util.io.FileUtil;
-import com.sun.org.apache.xml.internal.security.utils.HelperNodeList;
 import it.unimol.sdkanalyzer.runnable.APIVersionExtractor;
-import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
-import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.revwalk.RevCommit;
-import sun.rmi.runtime.Log;
+import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -32,18 +27,19 @@ import java.util.stream.Collectors;
 /**
  * @author Simone Scalabrino.
  */
-public class TopicAssigner {
+public class MessageAssigner {
     private final Git git;
 
-    public TopicAssigner(File repository) throws IOException, GitAPIException {
-        this.git = Git.wrap(new FileRepository(repository));
+    public MessageAssigner(File repository) throws IOException {
+        this.git = Git.open(repository);
     }
 
-    public void assign(APIVersionExtractor.APIUsageReport report, String commit) throws GitAPIException, IOException {
-        this.git.checkout().setForce(true).setName(commit).call();
+    public void assign(APIVersionExtractor.APIUsageReport report, String checkoutCommit) throws GitAPIException, IOException {
+        if (checkoutCommit != null)
+            this.git.checkout().setForce(true).setName(checkoutCommit).call();
 
         String classPath = report.getMethod().getClassContext().getIClass().getName().toString();
-        classPath = classPath.replace(".", "/");
+        classPath = classPath.substring(1);
         if (classPath.contains("$")) {
             classPath = classPath.substring(0, classPath.indexOf("$"));
         }
@@ -51,37 +47,83 @@ public class TopicAssigner {
 
         final String finalClassPath = classPath;
 
-        Path filePath = Files.walk(Paths.get(this.git.getRepository().getDirectory().getPath()))
+        Path filePath = Files.walk(Paths.get(this.git.getRepository().getDirectory().getParentFile().getPath()))
                 .filter(path -> path.endsWith(finalClassPath))
                 .findFirst()
                 .orElse(null);
 
         if (filePath != null) {
-            Path relativeFilePath = filePath.relativize(Paths.get(this.git.getRepository().getDirectory().getPath()));
+            Path relativeFilePath = Paths.get(this.git.getRepository().getDirectory().getParentFile().getPath()).relativize(filePath);
 
             CompilationUnit compilationUnit = JavaParser.parse(filePath);
 
             IMethod method = report.getMethod().getIMethod();
 
-            MethodDeclaration declaration = compilationUnit.findAll(MethodDeclaration.class).stream()
-                    .filter(methodDeclaration -> {
-                                if (!methodDeclaration.getName().getIdentifier().equals(method.getName().toString()))
-                                    return false;
 
-                                if (methodDeclaration.getParameters().size() != method.getNumberOfParameters())
+            CallableDeclaration declaration = compilationUnit.findAll(CallableDeclaration.class).stream()
+                    .filter(methodDeclaration -> {
+                                if (method.isInit()) {
+                                    if (!methodDeclaration.isConstructorDeclaration())
+                                        return false;
+                                } else {
+                                    if (!methodDeclaration.getName().getIdentifier().equals(method.getName().toString()))
+                                        return false;
+                                }
+
+                                if (methodDeclaration.getParameters().size() != method.getNumberOfParameters() - 1)
                                     return false;
 
                                 for (int i = 0; i < methodDeclaration.getParameters().size(); i++) {
                                     Type type = methodDeclaration.getParameter(i).getType();
-                                    TypeReference apkParameterType = method.getParameterType(i);
+                                    TypeReference apkParameterType = method.getParameterType(i + 1);
 
-                                    if (!type.asString().equals(apkParameterType.toString().substring(1).replace('/','.')))
-                                        return false;
+                                    if (apkParameterType.isPrimitiveType()) {
+                                        String translatedType = "?";
+                                        switch (apkParameterType.getName().toString()) {
+                                            case "I":
+                                                translatedType = "int";
+                                                break;
+                                            case "J":
+                                                translatedType = "long";
+                                                break;
+                                            case "Z":
+                                                translatedType = "boolean";
+                                                break;
+                                            case "D":
+                                                translatedType = "double";
+                                                break;
+                                            case "F":
+                                                translatedType = "float";
+                                                break;
+                                            case "B":
+                                                translatedType = "byte";
+                                                break;
+                                            case "C":
+                                                translatedType = "char";
+                                                break;
+                                            case "S":
+                                                translatedType = "short";
+                                                break;
+                                        }
+                                        assert !translatedType.equals("?");
+
+                                        if (!type.asString().equals(translatedType))
+                                            return false;
+                                    } else {
+                                        String apkParameterTypeName = apkParameterType.getName().toString();
+                                        apkParameterTypeName = apkParameterTypeName.substring(apkParameterTypeName.lastIndexOf("/") + 1);
+
+                                        if (apkParameterTypeName.contains("$"))
+                                            apkParameterTypeName = apkParameterTypeName.substring(apkParameterTypeName.lastIndexOf("$") + 1);
+
+                                        if (!type.asString().equals(apkParameterTypeName))
+                                            return false;
+                                    }
                                 }
 
                                 return true;
                             }
-                        ).findFirst().orElse(null);
+                    ).findFirst().orElse(null);
 
             if (declaration == null) {
                 Logger.getAnonymousLogger().warning("Unable to find the declaration from the source code");
@@ -94,8 +136,13 @@ public class TopicAssigner {
                     ).collect(Collectors.toList());
 
             if (sdkCheck.size() == 0) {
-                Logger.getAnonymousLogger().warning("No SDK checks in the method. Skipping");
-                return;
+                sdkCheck = declaration.findAll(IfStmt.class);
+
+                //Last attempt: if there is only one if, use that one!
+                if (sdkCheck.size() > 1) {
+                    Logger.getAnonymousLogger().warning("No SDK checks in the method. Skipping");
+                    return;
+                }
             }
 
             List<RevCommit> commits = new ArrayList<>();
@@ -105,7 +152,7 @@ public class TopicAssigner {
                 if (ifTokenRange == null)
                     continue;
 
-                Range lineRange = ifTokenRange.getBegin().findFirstToken().getRange().orElse(null);
+                Range lineRange = ifTokenRange.getBegin().getRange().orElse(null);
 
                 if (lineRange == null) {
                     Logger.getAnonymousLogger().warning("Unable to retrieve the range");
@@ -131,7 +178,23 @@ public class TopicAssigner {
                 return;
             }
 
-            report.setMessage(commits.);
+            report.setMessage(commits.get(0).getFullMessage());
+
+            try (ObjectReader reader = git.getRepository().newObjectReader()) {
+                CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
+                oldTreeIter.reset(reader, commits.get(0).getParent(0).getTree());
+
+                CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
+                newTreeIter.reset(reader, commits.get(0).getTree());
+
+                // finally get the list of changed files
+                List<DiffEntry> diffs = git.diff()
+                        .setNewTree(newTreeIter)
+                        .setOldTree(oldTreeIter)
+                        .call();
+
+                report.setNumberOfModifiedFiles(diffs.size());
+            }
         }
     }
 }

@@ -17,10 +17,12 @@ import java.util.Collection;
  */
 public class ForwardCompatibilityBugDetector extends SingleRuleViolationDetector {
     private static final String MESSAGE = "You must use this APIs differently from SDK version %d. Add a check and handle with: %s";
+    private final int apiLevel;
     private final APILifetime apiLifetime;
 
-    public ForwardCompatibilityBugDetector(APILifetime apiLifetime) {
+    public ForwardCompatibilityBugDetector(int apiLevel, APILifetime apiLifetime) {
         this.apiLifetime = apiLifetime;
+        this.apiLevel = apiLevel;
     }
 
     @Override
@@ -37,7 +39,7 @@ public class ForwardCompatibilityBugDetector extends SingleRuleViolationDetector
         for (String api : rule.getTrueApis()) {
             APILife apiLife = this.apiLifetime.getLifeFor(api);
 
-            if (apiLife.getMaxVersion() != -1)
+            if (apiLife.getMaxVersion() < apiLevel && apiLife.getMaxVersion() != -1)
                 return true;
         }
 

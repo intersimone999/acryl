@@ -25,6 +25,8 @@ import java.util.logging.Logger;
  * @author Simone Scalabrino.
  */
 public class Detector extends CommonRunner {
+    private static final int API_LEVEL = 27;
+
     public void run(String[] args) throws Exception {
         checkAndInitialize(args);
 
@@ -50,13 +52,21 @@ public class Detector extends CommonRunner {
             minApps = 10;
         }
 
+        int apiLevel;
+        if (args.length >= 10) {
+            apiLevel = Integer.parseInt(args[9]);
+        } else {
+            Logger.getAnonymousLogger().info("Using default API level 27");
+            apiLevel = API_LEVEL;
+        }
 
         File rulesFile = new File(args[5]);
         File lifetimeFile = new File(args[6]);
 
         boolean quick = false;
-        if (args.length == 10 && args[9].equals("-quick")) {
-            quick = true;
+        for (int i = 10; i < args.length; i++) {
+            if (args[i].equals("--quick"))
+                quick = true;
         }
 
         apkContext.setClassNotFoundHandler(
@@ -80,7 +90,7 @@ public class Detector extends CommonRunner {
         APILifetime apiLifetime = APILifetime.load(lifetimeFile);
 
         Ruleset ruleset = new Ruleset(rulesFile, minApps, minConfidence);
-        CombinedViolationDetector detector = new CombinedViolationDetector(apk, apiLifetime, apkContext);
+        CombinedViolationDetector detector = new CombinedViolationDetector(apk, apiLevel, apiLifetime, apkContext);
 
         Logger.getAnonymousLogger().info("Starting analysis...");
         VersionDependentInstructionsExtractor extractor = new VersionDependentInstructionsExtractor(cache);
