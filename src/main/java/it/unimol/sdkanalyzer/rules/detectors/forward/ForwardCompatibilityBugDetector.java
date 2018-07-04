@@ -4,9 +4,8 @@ import it.unimol.sdkanalyzer.analysis.VersionChecker;
 import it.unimol.sdkanalyzer.android.ApkContainer;
 import it.unimol.sdkanalyzer.lifetime.APILife;
 import it.unimol.sdkanalyzer.lifetime.APILifetime;
-import it.unimol.sdkanalyzer.rules.Rule;
 import it.unimol.sdkanalyzer.rules.CombinedViolationDetector;
-import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
+import it.unimol.sdkanalyzer.rules.Rule;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 import org.apache.commons.lang3.StringUtils;
 
@@ -15,7 +14,7 @@ import java.util.Collection;
 /**
  * @author Simone Scalabrino.
  */
-public class ForwardCompatibilityBugDetector extends SingleRuleViolationDetector {
+public class ForwardCompatibilityBugDetector extends PotentialForwardCompatibilityDetector {
     private static final String MESSAGE = "You must use this APIs differently from SDK version %d. Add a check and handle with: %s";
     private final int apiLevel;
     private final APILifetime apiLifetime;
@@ -27,13 +26,7 @@ public class ForwardCompatibilityBugDetector extends SingleRuleViolationDetector
 
     @Override
     public boolean violatesRule(ApkContainer apk, MethodContext methodContext, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) {
-        if (rule.getTrueApis().size() == 0)
-            return false;
-
-        if (!apisInCode.containsAll(rule.getTrueApis()))
-            return false;
-
-        if (!codeCheck.isNull())
+        if (!super.violatesRule(apk, methodContext, codeCheck, rule, apisInCode))
             return false;
 
         for (String api : rule.getTrueApis()) {

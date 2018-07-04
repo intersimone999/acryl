@@ -52,8 +52,10 @@ public class ClassContext {
     public boolean isForcingDetectionSkip() {
         // TODO define an annotation through which developers can force the tool to skip check on a method/class
         for (Annotation annotation : iClass.getAnnotations()) {
-            if (annotation.getType().getName().toString().equals("Lit/unimol/sdkanalyzer/ForceSkip")) {
-                return true;
+            if (annotation.getType().getName().toString().equals("Ljava/lang/SuppressWarnings")) {
+                AnnotationsReader.ElementValue value = annotation.getNamedArguments().get("value");
+                if (value instanceof AnnotationsReader.ConstantElementValue)
+                    return ((AnnotationsReader.ConstantElementValue) value).val.equals("APICompatibilityIssues");
             }
         }
 

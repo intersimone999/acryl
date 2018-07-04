@@ -11,7 +11,6 @@ import it.unimol.sdkanalyzer.static_analysis.contexts.JarContext;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -27,7 +26,8 @@ public class CommonRunner {
                     "org.w3c.dom",
                     "org.xml.sax",
                     "org.xmlpull",
-                    "dalvik"
+                    "dalvik",
+                    "com.android"
             };
 
     protected File apkFile;

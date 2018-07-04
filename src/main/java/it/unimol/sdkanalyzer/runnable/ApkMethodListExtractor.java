@@ -2,16 +2,13 @@ package it.unimol.sdkanalyzer.runnable;
 
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.ssa.SSAAbstractInvokeInstruction;
-import com.ibm.wala.ssa.SSAInstruction;
 import it.unimol.sdkanalyzer.static_analysis.contexts.ClassContext;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -25,12 +22,14 @@ public class ApkMethodListExtractor extends CommonRunner {
 
         String appName      = apk.getPackageName();
         String appVersion   = apk.getVersion();
-        String appSdkMin    = String.valueOf(apk.getMinSDKVersion());
-        String appSdkTrg    = String.valueOf(apk.getTargetSDKVersion());
 
         List<String> data = new ArrayList<>();
         for (IClass iClass : apkContext.getClassesInJar(false)) {
             ClassContext classContext = apkContext.resolveClassContext(iClass);
+
+            if (Arrays.stream(PACKAGE_UNDER_ANALYSIS).anyMatch(toSkip -> classContext.getIClass().getName().toString().startsWith(toSkip))) {
+                continue;
+            }
 
             for (IMethod iMethod : classContext.getNonAbstractMethods()) {
                 MethodContext methodContext = classContext.resolveMethodContext(iMethod);

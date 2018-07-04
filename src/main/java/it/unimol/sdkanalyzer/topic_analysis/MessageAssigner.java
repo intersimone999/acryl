@@ -59,7 +59,6 @@ public class MessageAssigner {
 
             IMethod method = report.getMethod().getIMethod();
 
-
             CallableDeclaration declaration = compilationUnit.findAll(CallableDeclaration.class).stream()
                     .filter(methodDeclaration -> {
                                 if (method.isInit()) {
@@ -178,19 +177,21 @@ public class MessageAssigner {
                 return;
             }
 
-            report.setMessage(commits.get(0).getFullMessage());
+            RevCommit mainBlamedCommit = commits.get(0);
+
+            report.setMessage(mainBlamedCommit.getFullMessage());
 
             try (ObjectReader reader = git.getRepository().newObjectReader()) {
                 CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
-                oldTreeIter.reset(reader, commits.get(0).getParent(0).getTree());
+                oldTreeIter.reset(reader, mainBlamedCommit.getParent(0).getTree());
 
                 CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
-                newTreeIter.reset(reader, commits.get(0).getTree());
+                newTreeIter.reset(reader, mainBlamedCommit.getTree());
 
                 // finally get the list of changed files
                 List<DiffEntry> diffs = git.diff()
-                        .setNewTree(newTreeIter)
                         .setOldTree(oldTreeIter)
+                        .setNewTree(newTreeIter)
                         .call();
 
                 report.setNumberOfModifiedFiles(diffs.size());

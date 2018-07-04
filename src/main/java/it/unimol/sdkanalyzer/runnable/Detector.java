@@ -105,6 +105,11 @@ public class Detector extends CommonRunner {
                 continue;
             }
 
+            // Skip classes belonging to the packages under analysis
+            if (Arrays.stream(PACKAGE_UNDER_ANALYSIS).anyMatch(toSkip -> classContext.getIClass().getName().toString().startsWith(toSkip))) {
+                continue;
+            }
+
             for (IMethod iMethod : classContext.getNonAbstractMethods()) {
                 MethodContext methodContext = classContext.resolveMethodContext(iMethod);
                 if (methodContext.getIntermediateRepresentation() == null)
@@ -127,7 +132,7 @@ public class Detector extends CommonRunner {
                     IPCFG ipcfg = IPCFG.buildIPCFG(apkContext, entry.getValue(), false);
                     entry.getValue().setMethodContext(methodContext);
 
-                    Collection<String> apis = ipcfg.getCalledAPIs(Collections.singletonList("android"));
+                    Collection<String> apis = ipcfg.getCalledAPIs(Arrays.asList(CommonRunner.PACKAGE_UNDER_ANALYSIS));
                     List<CombinedViolationDetector.RuleViolationReport> reports = new ArrayList<>();
                     for (Rule rule : ruleset.matchingRules(apis)) {
                         CombinedViolationDetector.RuleViolationReport report = detector.violatesRule(methodContext, entry.getKey(), rule, apis);

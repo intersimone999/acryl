@@ -74,6 +74,10 @@ public class APIVersionExtractor extends CommonRunner {
         for (IClass iClass : apkContext.getClassesInJar(false)) {
             ClassContext classContext = apkContext.resolveClassContext(iClass);
 
+            // Skip classes belonging to the packages under analysis
+            if (Arrays.stream(PACKAGE_UNDER_ANALYSIS).anyMatch(toSkip -> classContext.getIClass().getName().toString().startsWith(toSkip)))
+                continue;
+
             for (IMethod iMethod : classContext.getNonAbstractMethods()) {
                 MethodContext methodContext = classContext.resolveMethodContext(iMethod);
                 methodContext.getAugmentedSymbolTable().update(cache);

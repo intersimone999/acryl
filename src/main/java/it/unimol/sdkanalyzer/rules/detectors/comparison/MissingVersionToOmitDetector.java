@@ -1,10 +1,10 @@
-package it.unimol.sdkanalyzer.rules.detectors.forward;
+package it.unimol.sdkanalyzer.rules.detectors.comparison;
 
 import it.unimol.sdkanalyzer.analysis.VersionChecker;
 import it.unimol.sdkanalyzer.android.ApkContainer;
 import it.unimol.sdkanalyzer.rules.CombinedViolationDetector;
 import it.unimol.sdkanalyzer.rules.Rule;
-import it.unimol.sdkanalyzer.static_analysis.contexts.JarContext;
+import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 import org.apache.commons.lang3.StringUtils;
 
@@ -13,22 +13,21 @@ import java.util.Collection;
 /**
  * @author Simone Scalabrino.
  */
-public class ForwardCompatibilityBadSmellDetector extends PotentialForwardCompatibilityDetector {
-    private final JarContext context;
-
-    public ForwardCompatibilityBadSmellDetector(JarContext context) {
-        this.context = context;
-    }
+public class MissingVersionToOmitDetector extends SingleRuleViolationDetector {
+    private static final String MESSAGE_WRONG_VERSION = "[Critical] You use a wrong version checking. You should check for %s, but you check for %s";
 
     @Override
     public boolean violatesRule(ApkContainer apk, MethodContext methodContext, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) {
-        if (!super.violatesRule(apk, methodContext, codeCheck, rule, apisInCode))
+        VersionChecker ruleCheck = rule.getChecker().copy();
+
+        if (!codeCheck.isNull())
             return false;
 
-        for (String api : rule.getTrueApis()) {
-            MethodContext apiMethodContext = this.context.resolveMethodContext(api);
-            if (apiMethodContext.isDeprecated())
-                return true;
+        if (!rule.getChecker().getComparator().equals(VersionChecker.Comparator.NE))
+            return false;
+
+        if (apisInCode.containsAll(rule.getTrueApis()) && rule.getTrueApis().size() > 0) {
+            return true;
         }
 
         return false;
@@ -46,28 +45,27 @@ public class ForwardCompatibilityBadSmellDetector extends PotentialForwardCompat
         StringBuilder messageBuilder = new StringBuilder("[Warning] ");
         if (alternativeApis.containsAll(usedApis)) {
             // Wrong Contextual Usage
-            messageBuilder.append("Some of the APIs you are using are deprecated and they should be used in a different way in newer Android releases(")
+
+            messageBuilder.append("The APIs you are using must be used in a different way in a specific Android release (")
                     .append(checkToImplement.getInverse(true).toString())
-                    .append("). ")
-                    .append("For new versions, consider using these APIs: ")
+                    .append("). Use these APIs instead: ")
                     .append(alternativeApisString)
                     .append(".");
         } else if (alternativeApis.size() == 0) {
             // Case of Version-Specific Control
-            messageBuilder.append("Some of the APIs you are using are deprecated they should be used only in older Android versions (")
-                    .append(checkToImplement.toString())
-                    .append("). ")
-                    .append("Add a check before using them.");
-        } else {
-            messageBuilder.append("You should use this APIs differently in newer Android versions (")
+            messageBuilder.append("The APIs you are using must be used only in a specific Android version (")
                     .append(checkToImplement.getInverse(true).toString())
-                    .append("). For new versions, consider using these APIs: ")
+                    .append("). Check the Android version before using them. ");
+        } else {
+            messageBuilder.append("You should use different APIs in a specific Android version (")
+                    .append(checkToImplement.getInverse(true).toString())
+                    .append("). Use these APIs instead: ")
                     .append(alternativeApisString)
                     .append(".");
         }
 
         return new CombinedViolationDetector.RuleViolationReport(
-                CombinedViolationDetector.RuleViolation.ForwardBadSmell,
+                CombinedViolationDetector.RuleViolation.MissingSpecificCheck,
                 messageBuilder.toString(),
                 rule.getConfidence(),
                 usedApis

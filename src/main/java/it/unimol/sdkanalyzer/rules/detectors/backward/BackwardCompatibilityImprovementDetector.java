@@ -2,9 +2,8 @@ package it.unimol.sdkanalyzer.rules.detectors.backward;
 
 import it.unimol.sdkanalyzer.analysis.VersionChecker;
 import it.unimol.sdkanalyzer.android.ApkContainer;
-import it.unimol.sdkanalyzer.rules.Rule;
 import it.unimol.sdkanalyzer.rules.CombinedViolationDetector;
-import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
+import it.unimol.sdkanalyzer.rules.Rule;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
 import org.apache.commons.lang3.StringUtils;
 
@@ -15,7 +14,7 @@ import java.util.logging.Logger;
 /**
  * @author Simone Scalabrino.
  */
-public class BackwardCompatibilityImprovementDetector extends SingleRuleViolationDetector {
+public class BackwardCompatibilityImprovementDetector extends PotentialBackwardCompatibilityDetector {
     private static final String MESSAGE = "If you want to support older versions (<= %d), add a check and handle using these APIs: %s";
 
     public BackwardCompatibilityImprovementDetector() {
@@ -23,13 +22,7 @@ public class BackwardCompatibilityImprovementDetector extends SingleRuleViolatio
 
     @Override
     public boolean violatesRule(ApkContainer apk, MethodContext methodContext, VersionChecker codeCheck, Rule rule, Collection<String> apisInCode) throws IOException {
-        if (rule.getFalseApis().size() == 0)
-            return false;
-
-        if (!apisInCode.containsAll(rule.getFalseApis()))
-            return false;
-
-        if (!codeCheck.isNull())
+        if (!super.violatesRule(apk, methodContext, codeCheck, rule, apisInCode))
             return false;
 
         if (methodContext.getTargetAndroidSDK() > rule.getChecker().getCheckedVersion() ||

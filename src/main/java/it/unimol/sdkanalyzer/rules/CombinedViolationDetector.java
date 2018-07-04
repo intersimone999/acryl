@@ -4,8 +4,11 @@ import it.unimol.sdkanalyzer.analysis.VersionChecker;
 import it.unimol.sdkanalyzer.android.ApkContainer;
 import it.unimol.sdkanalyzer.lifetime.APILifetime;
 import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
+import it.unimol.sdkanalyzer.rules.detectors.backward.BackwardCompatibilityBadSmellDetector;
 import it.unimol.sdkanalyzer.rules.detectors.backward.BackwardCompatibilityBugDetector;
 import it.unimol.sdkanalyzer.rules.detectors.backward.BackwardCompatibilityImprovementDetector;
+import it.unimol.sdkanalyzer.rules.detectors.comparison.MissingSpecificVersionCheckDetector;
+import it.unimol.sdkanalyzer.rules.detectors.comparison.MissingVersionToOmitDetector;
 import it.unimol.sdkanalyzer.rules.detectors.comparison.WrongCheckDetector;
 import it.unimol.sdkanalyzer.rules.detectors.forward.ForwardCompatibilityBadSmellDetector;
 import it.unimol.sdkanalyzer.rules.detectors.forward.ForwardCompatibilityBugDetector;
@@ -31,12 +34,15 @@ public class CombinedViolationDetector {
                 new BackwardCompatibilityBugDetector(apiLifetime),
 
                 new ForwardCompatibilityBadSmellDetector(context),
-                new BackwardCompatibilityImprovementDetector(),
+                new BackwardCompatibilityBadSmellDetector(apiLifetime),
 
                 new ForwardCompatibilityImprovementDetector(apiLevel, apiLifetime),
                 new BackwardCompatibilityImprovementDetector(),
 
-                new WrongCheckDetector()
+                new WrongCheckDetector(),
+
+                new MissingSpecificVersionCheckDetector(),
+                new MissingVersionToOmitDetector()
         };
     }
 
@@ -156,7 +162,9 @@ public class CombinedViolationDetector {
         ForwardBadSmell,
         ForwardImprovement,
 
-        WrongCheck
+        WrongCheck,
+
+        MissingSpecificCheck
 //        CriticalBug,
 //        Warning,
 //        BackMigration,
