@@ -76,7 +76,9 @@ public class BackwardCompatibilityBugDetector extends PotentialBackwardCompatibi
                 CombinedViolationDetector.RuleViolation.BackwardCriticalBug,
                 messageBuilder.toString(),
                 rule.getConfidence(),
-                usedApis
+                usedApis,
+                alternativeApis,
+                rule.getChecker().toString()
         );
     }
 }

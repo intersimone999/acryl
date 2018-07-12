@@ -13,6 +13,7 @@ import java.util.Collection;
 /**
  * @author Simone Scalabrino.
  */
+@Deprecated
 public class MissingVersionToOmitDetector extends SingleRuleViolationDetector {
     private static final String MESSAGE_WRONG_VERSION = "[Critical] You use a wrong version checking. You should check for %s, but you check for %s";
 
@@ -68,7 +69,9 @@ public class MissingVersionToOmitDetector extends SingleRuleViolationDetector {
                 CombinedViolationDetector.RuleViolation.MissingSpecificCheck,
                 messageBuilder.toString(),
                 rule.getConfidence(),
-                usedApis
+                usedApis,
+                alternativeApis,
+                rule.getChecker().toString()
         );
     }
 }

@@ -138,7 +138,9 @@ public class WrongCheckDetector extends SingleRuleViolationDetector {
                     CombinedViolationDetector.RuleViolation.WrongCheck,
                     String.format(MESSAGE_WRONG_VERSION, actualCheck.toString(), checkToImplement.toString()),
                     rule.getConfidence(),
-                    usedApis
+                    usedApis,
+                    alternativeApis,
+                    rule.getChecker().toString()
             );
 
         assert false : "This should not be possible";

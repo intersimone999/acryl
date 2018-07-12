@@ -2,6 +2,8 @@ package it.unimol.sdkanalyzer.rules.detectors.backward;
 
 import it.unimol.sdkanalyzer.analysis.VersionChecker;
 import it.unimol.sdkanalyzer.android.ApkContainer;
+import it.unimol.sdkanalyzer.lifetime.APILife;
+import it.unimol.sdkanalyzer.lifetime.APILifetime;
 import it.unimol.sdkanalyzer.rules.CombinedViolationDetector;
 import it.unimol.sdkanalyzer.rules.Rule;
 import it.unimol.sdkanalyzer.static_analysis.contexts.MethodContext;
@@ -16,8 +18,10 @@ import java.util.logging.Logger;
  */
 public class BackwardCompatibilityImprovementDetector extends PotentialBackwardCompatibilityDetector {
     private static final String MESSAGE = "If you want to support older versions (<= %d), add a check and handle using these APIs: %s";
+    private final APILifetime apiLifetime;
 
-    public BackwardCompatibilityImprovementDetector() {
+    public BackwardCompatibilityImprovementDetector(APILifetime lifetime) {
+        this.apiLifetime = lifetime;
     }
 
     @Override
@@ -31,7 +35,17 @@ public class BackwardCompatibilityImprovementDetector extends PotentialBackwardC
             return false;
         }
 
-        return (apk.getMinSDKVersion() > rule.getChecker().getCheckedVersion());
+        if (apk.getMinSDKVersion() <= rule.getChecker().getCheckedVersion())
+            return false;
+
+        for (String api : rule.getFalseApis()) {
+            APILife apiLife = this.apiLifetime.getLifeFor(api);
+
+            if (apiLife.getMinVersion() <= rule.getChecker().getCheckedVersion())
+                return true;
+        }
+
+        return false;
     }
 
     public CombinedViolationDetector.RuleViolationReport buildReport(
@@ -48,7 +62,9 @@ public class BackwardCompatibilityImprovementDetector extends PotentialBackwardC
                 CombinedViolationDetector.RuleViolation.BackwardImprovement,
                 String.format(MESSAGE, rule.getChecker().getCheckedVersion(), alternativeApisString),
                 rule.getConfidence(),
-                usedApis
+                usedApis,
+                alternativeApis,
+                rule.getChecker().toString()
         );
     }
 }

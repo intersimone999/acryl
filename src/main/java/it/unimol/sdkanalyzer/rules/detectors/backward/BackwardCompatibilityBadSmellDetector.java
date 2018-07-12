@@ -15,6 +15,7 @@ import java.util.Collection;
 /**
  * @author Simone Scalabrino.
  */
+@Deprecated
 public class BackwardCompatibilityBadSmellDetector extends PotentialBackwardCompatibilityDetector {
     private final APILifetime apiLifetime;
 
@@ -54,20 +55,19 @@ public class BackwardCompatibilityBadSmellDetector extends PotentialBackwardComp
             // Wrong Contextual Usage
 
             messageBuilder.append("The APIs you are using should be used in a different way in old Android versions (")
-                    .append(checkToImplement.toString())
-                    .append("). ")
+                    .append(rule.getChecker().toString())
                     .append("). For such versions, consider using these APIs: ")
                     .append(alternativeApisString)
                     .append(".");
         } else if (alternativeApis.size() == 0) {
             // Case of Version-Specific Control
             messageBuilder.append("The APIs you are using should be used only in newer Android versions (")
-                    .append(checkToImplement.getInverse(true).toString())
+                    .append(rule.getChecker().getInverse(true).toString())
                     .append("). ")
                     .append("Consider adding a check. ");
         } else {
             messageBuilder.append("You should use different APIs in old Android versions (")
-                    .append(checkToImplement.toString())
+                    .append(rule.getChecker().toString())
                     .append("). For such versions, consider using these APIs: ")
                     .append(alternativeApisString)
                     .append(".");
@@ -76,7 +76,9 @@ public class BackwardCompatibilityBadSmellDetector extends PotentialBackwardComp
                 CombinedViolationDetector.RuleViolation.BackwardBadSmell,
                 messageBuilder.toString(),
                 rule.getConfidence(),
-                usedApis
+                usedApis,
+                alternativeApis,
+                rule.getChecker().toString()
         );
     }
 }

@@ -75,7 +75,9 @@ public class ForwardCompatibilityBugDetector extends PotentialForwardCompatibili
                 CombinedViolationDetector.RuleViolation.ForwardCriticalBug,
                 messageBuilder.toString(),
                 rule.getConfidence(),
-                usedApis
+                usedApis,
+                alternativeApis,
+                rule.getChecker().toString()
         );
     }
 }

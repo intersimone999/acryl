@@ -4,11 +4,8 @@ import it.unimol.sdkanalyzer.analysis.VersionChecker;
 import it.unimol.sdkanalyzer.android.ApkContainer;
 import it.unimol.sdkanalyzer.lifetime.APILifetime;
 import it.unimol.sdkanalyzer.rules.detectors.SingleRuleViolationDetector;
-import it.unimol.sdkanalyzer.rules.detectors.backward.BackwardCompatibilityBadSmellDetector;
 import it.unimol.sdkanalyzer.rules.detectors.backward.BackwardCompatibilityBugDetector;
 import it.unimol.sdkanalyzer.rules.detectors.backward.BackwardCompatibilityImprovementDetector;
-import it.unimol.sdkanalyzer.rules.detectors.comparison.MissingSpecificVersionCheckDetector;
-import it.unimol.sdkanalyzer.rules.detectors.comparison.MissingVersionToOmitDetector;
 import it.unimol.sdkanalyzer.rules.detectors.comparison.WrongCheckDetector;
 import it.unimol.sdkanalyzer.rules.detectors.forward.ForwardCompatibilityBadSmellDetector;
 import it.unimol.sdkanalyzer.rules.detectors.forward.ForwardCompatibilityBugDetector;
@@ -34,15 +31,15 @@ public class CombinedViolationDetector {
                 new BackwardCompatibilityBugDetector(apiLifetime),
 
                 new ForwardCompatibilityBadSmellDetector(context),
-                new BackwardCompatibilityBadSmellDetector(apiLifetime),
+//                new BackwardCompatibilityBadSmellDetector(apiLifetime),
 
                 new ForwardCompatibilityImprovementDetector(apiLevel, apiLifetime),
-                new BackwardCompatibilityImprovementDetector(),
+                new BackwardCompatibilityImprovementDetector(apiLifetime),
 
                 new WrongCheckDetector(),
 
-                new MissingSpecificVersionCheckDetector(),
-                new MissingVersionToOmitDetector()
+//                new MissingSpecificVersionCheckDetector(),
+//                new MissingVersionToOmitDetector()
         };
     }
 
@@ -75,20 +72,24 @@ public class CombinedViolationDetector {
         private final RuleViolation violation;
         private final String message;
         private final double confidence;
+        private final String check;
         private Collection<String> ruleApisMismatch;
+        private Collection<String> alternativeApis;
         private MethodContext methodContext;
         private int minLine;
         private int maxLine;
 
-        public RuleViolationReport(RuleViolation violation, String message, double confidence, Collection<String> ruleApisMismatch) {
+        public RuleViolationReport(RuleViolation violation, String message, double confidence, Collection<String> ruleApisMismatch, Collection<String> alternativeApis, String check) {
             this.violation  = violation;
             this.message    = message;
             this.confidence = confidence;
             this.ruleApisMismatch = ruleApisMismatch;
+            this.alternativeApis = alternativeApis;
+            this.check = check;
         }
 
-        public RuleViolationReport(RuleViolation violation, double confidence, Collection<String> ruleApisMismatch) {
-            this(violation, "", confidence, ruleApisMismatch);
+        public RuleViolationReport(RuleViolation violation, double confidence, Collection<String> ruleApisMismatch, Collection<String> alternativeApis, String check) {
+            this(violation, "", confidence, ruleApisMismatch, alternativeApis, check);
         }
 
         public RuleViolation getViolation() {
@@ -144,12 +145,20 @@ public class CombinedViolationDetector {
             this.maxLine = maxLine;
         }
 
+        public String getCheck() {
+            return check;
+        }
+
         public MethodContext getMethodContext() {
             return methodContext;
         }
 
         public void setMethodContext(MethodContext methodContext) {
             this.methodContext = methodContext;
+        }
+
+        public Collection<String> getAlternativeApis() {
+            return this.alternativeApis;
         }
     }
 

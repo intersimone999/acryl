@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
@@ -63,6 +64,11 @@ public class GlobalContext {
     }
 
     public static File getExclusionsFile() {
-        return new File("voidExclusion.txt");
+        try {
+            return File.createTempFile("voidExclusion", ".txt");
+        } catch (IOException e) {
+            Logger.getAnonymousLogger().severe("Cannot create a temporary void exclusion file. Trying with the existing one, if any...");
+            return new File("voidExclusion.txt");
+        }
     }
 }

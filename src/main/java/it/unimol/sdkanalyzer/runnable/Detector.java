@@ -171,7 +171,7 @@ public class Detector extends CommonRunner {
 
 
         try (PrintWriter writer = new PrintWriter(outputFile)) {
-            writer.println("app\tversion\tsdk_min\tsdk_trg\tmethod\tfromLine\ttoLine\tapis\twarning\tmessage\tconfidence");
+            writer.println("app\tversion\tsdk_min\tsdk_trg\tmethod\tfromLine\ttoLine\tapis\talternative\truleCheck\twarning\tmessage\tconfidence");
 
             for (CombinedViolationDetector.RuleViolationReport report : allReports) {
                 //For each report...
@@ -197,6 +197,12 @@ public class Detector extends CommonRunner {
                 writer.print("\t");
 
                 writer.print(StringUtils.join(report.getRuleApisMismatch(), "&"));
+                writer.print("\t");
+
+                writer.print(StringUtils.join(report.getAlternativeApis(), "&"));
+                writer.print("\t");
+
+                writer.print(report.getCheck());
                 writer.print("\t");
 
                 writer.print(report.getViolation().toString());

@@ -25,7 +25,7 @@ public abstract class PotentialForwardCompatibilityDetector extends SingleRuleVi
         if (!codeCheck.isNull())
             return false;
 
-        if (codeCheck.getComparator().equals(VersionChecker.Comparator.NE))
+        if (rule.getChecker().getComparator().equals(VersionChecker.Comparator.NE))
             return false;
 
         int targetSDK = methodContext.getTargetAndroidSDK();

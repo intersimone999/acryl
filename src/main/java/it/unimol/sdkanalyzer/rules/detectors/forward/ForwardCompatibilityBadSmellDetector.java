@@ -70,7 +70,9 @@ public class ForwardCompatibilityBadSmellDetector extends PotentialForwardCompat
                 CombinedViolationDetector.RuleViolation.ForwardBadSmell,
                 messageBuilder.toString(),
                 rule.getConfidence(),
-                usedApis
+                usedApis,
+                alternativeApis,
+                rule.getChecker().toString()
         );
     }
 }

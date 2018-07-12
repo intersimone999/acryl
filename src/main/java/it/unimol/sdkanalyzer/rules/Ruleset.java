@@ -69,7 +69,7 @@ public class Ruleset {
         }
     }
 
-    private void load(File file, int minApps, double minConfidence) throws IOException {
+    private void load(File file, int minConfidenceLevel, double minConfidence) throws IOException {
         try (Reader reader = Files.newBufferedReader(Paths.get(file.getAbsolutePath()))) {
             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader());
 
@@ -80,11 +80,11 @@ public class Ruleset {
                 String trueApis     = csvRecord.get("true_apis");
                 String falseApis    = csvRecord.get("false_apis");
 
-                double occurrences  = Double.parseDouble(csvRecord.get("occurrences"));
-                int apps            = Integer.parseInt(csvRecord.get("napps"));
-                double confidence  = Double.parseDouble(csvRecord.get("reliability"));
+//                double occurrences  = Double.parseDouble(csvRecord.get("occurrences"));
+                int confidenceLevel            = Integer.parseInt(csvRecord.get("napps"));
+//                double confidence  = Double.parseDouble(csvRecord.get("reliability"));
 
-                if (confidence < minConfidence || apps < minApps)
+                if (confidenceLevel < minConfidenceLevel)
                     continue;
 
                 VersionChecker versionChecker = new VersionChecker();
@@ -101,7 +101,7 @@ public class Ruleset {
                     falseApisSeq.remove("");
 
                 Rule rule = new Rule(versionChecker, trueApisSeq, falseApisSeq);
-                rule.setConfidence(confidence);
+                rule.setConfidence(confidenceLevel);
 
                 this.addRule(rule);
             }

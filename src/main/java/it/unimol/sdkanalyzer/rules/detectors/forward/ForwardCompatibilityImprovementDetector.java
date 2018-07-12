@@ -93,7 +93,9 @@ public class ForwardCompatibilityImprovementDetector extends PotentialForwardCom
                 CombinedViolationDetector.RuleViolation.ForwardImprovement,
                 messageBuilder.toString(),
                 rule.getConfidence(),
-                usedApis
+                usedApis,
+                alternativeApis,
+                rule.getChecker().toString()
         );
     }
 }
