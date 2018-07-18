@@ -41,7 +41,8 @@ public class BackwardCompatibilityImprovementDetector extends PotentialBackwardC
         for (String api : rule.getFalseApis()) {
             APILife apiLife = this.apiLifetime.getLifeFor(api);
 
-            if (apiLife.getMinVersion() <= rule.getChecker().getCheckedVersion())
+            // It is an improvement only if it is a potential bug, i.e., at least one of the APIs did not exist in the past
+            if (apiLife.getMinVersion() > rule.getChecker().getCheckedVersion())
                 return true;
         }
 

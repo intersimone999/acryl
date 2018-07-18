@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Detects problems in a APK
@@ -64,9 +65,15 @@ public class Detector extends CommonRunner {
         File lifetimeFile = new File(args[6]);
 
         boolean quick = false;
+        boolean compress = false;
         for (int i = 10; i < args.length; i++) {
             if (args[i].equals("--quick"))
                 quick = true;
+
+            if (args[i].equals("--compress")) {
+                Logger.getAnonymousLogger().info("Running in compression mode. Some warnings may be omitted.");
+                compress = true;
+            }
         }
 
         apkContext.setClassNotFoundHandler(
@@ -140,20 +147,32 @@ public class Detector extends CommonRunner {
                             reports.add(report);
                     }
 
-                    CombinedViolationDetector.RuleViolationReport bestReport = reports.stream().min((v1, v2) -> {
-                        int firstComparison = v1.getViolation().compareTo(v2.getViolation());
-                        if (firstComparison != 0)
-                            return firstComparison;
-                        else
-                            return -Double.compare(v1.getConfidence(), v2.getConfidence());
-                    }).orElse(null);
+                    if (compress) {
+                        CombinedViolationDetector.RuleViolationReport bestReport = reports.stream().min((v1, v2) -> {
+                            int comparison = Integer.compare(v1.getViolationPriority(), v2.getViolationPriority());
 
-                    if (bestReport != null) {
-                        bestReport.setMethodContext(methodContext);
-                        bestReport.setMinLine(entry.getValue().getMinLine());
-                        bestReport.setMaxLine(entry.getValue().getMaxLine());
+                            if (comparison == 0)
+                                comparison = -Double.compare(v1.getConfidence(), v2.getConfidence());
 
-                        allReports.add(bestReport);
+                            return comparison;
+                        }).orElse(null);
+
+                        if (bestReport != null) {
+                            bestReport.setMethodContext(methodContext);
+                            bestReport.setMinLine(entry.getValue().getMinLine());
+                            bestReport.setMaxLine(entry.getValue().getMaxLine());
+
+                            allReports.add(bestReport);
+                            Logger.getAnonymousLogger().finest("Skipped " + (reports.size()-1) + " warnings thanks to compression");
+                        }
+                    } else {
+                        for (CombinedViolationDetector.RuleViolationReport report : reports) {
+                            report.setMethodContext(methodContext);
+                            report.setMinLine(entry.getValue().getMinLine());
+                            report.setMaxLine(entry.getValue().getMaxLine());
+
+                            allReports.add(report);
+                        }
                     }
                 }
             }
