@@ -27,7 +27,7 @@ public class ApkMethodListExtractor extends CommonRunner {
         for (IClass iClass : apkContext.getClassesInJar(false)) {
             ClassContext classContext = apkContext.resolveClassContext(iClass);
 
-            if (Arrays.stream(PACKAGE_UNDER_ANALYSIS).anyMatch(toSkip -> classContext.getIClass().getName().toString().startsWith(toSkip))) {
+            if (PACKAGE_UNDER_ANALYSIS.stream().anyMatch(toSkip -> classContext.getIClass().getName().toString().startsWith(toSkip))) {
                 continue;
             }
 

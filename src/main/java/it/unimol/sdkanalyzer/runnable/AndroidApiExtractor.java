@@ -52,8 +52,16 @@ public class AndroidApiExtractor extends CommonRunner {
                         } catch (RuntimeException e) {
                             calledMethodSignature = "<??? Not resolved ???>";
                         }
-                        if (calledMethodSignature.startsWith("android"))
+
+                        boolean toAdd = false;
+                        for (String packageUnderAnalysis : PACKAGE_UNDER_ANALYSIS) {
+                            if (calledMethodSignature.startsWith(packageUnderAnalysis))
+                                toAdd = true;
+                        }
+
+                        if (toAdd) {
                             data.put(calledMethodSignature, data.getOrDefault(calledMethodSignature, 0) + 1);
+                        }
                     }
                 }
             }

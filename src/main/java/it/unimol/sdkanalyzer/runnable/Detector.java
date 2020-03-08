@@ -113,7 +113,15 @@ public class Detector extends CommonRunner {
             }
 
             // Skip classes belonging to the packages under analysis
-            if (Arrays.stream(PACKAGE_UNDER_ANALYSIS).anyMatch(toSkip -> classContext.getIClass().getName().toString().startsWith(toSkip))) {
+            boolean skipClass = false;
+            String className = iClass.getName().toString();
+            for (String packageUnderAnalysis : PACKAGE_UNDER_ANALYSIS) {
+                if (className.startsWith("L" + packageUnderAnalysis.replace('.', '/'))) {
+                    skipClass = true;
+                    break;
+                }
+            }
+            if (skipClass) {
                 continue;
             }
 
@@ -139,7 +147,7 @@ public class Detector extends CommonRunner {
                     IPCFG ipcfg = IPCFG.buildIPCFG(apkContext, entry.getValue(), false);
                     entry.getValue().setMethodContext(methodContext);
 
-                    Collection<String> apis = ipcfg.getCalledAPIs(Arrays.asList(CommonRunner.PACKAGE_UNDER_ANALYSIS));
+                    Collection<String> apis = ipcfg.getCalledAPIs(CommonRunner.PACKAGE_UNDER_ANALYSIS);
                     List<CombinedViolationDetector.RuleViolationReport> reports = new ArrayList<>();
                     for (Rule rule : ruleset.matchingRules(apis)) {
                         CombinedViolationDetector.RuleViolationReport report = detector.violatesRule(methodContext, entry.getKey(), rule, apis);

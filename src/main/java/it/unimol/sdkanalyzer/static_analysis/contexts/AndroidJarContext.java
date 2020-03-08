@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -16,9 +17,9 @@ import java.util.zip.ZipInputStream;
  * @author Simone Scalabrino.
  */
 public class AndroidJarContext extends JarContext {
-    private static List<String> androidPackageNames;
+    private static Set<String> androidPackageNames;
 
-    public static void setAndroidPackageNames(List<String> androidPackageNames) {
+    public static void setAndroidPackageNames(Set<String> androidPackageNames) {
         AndroidJarContext.androidPackageNames = androidPackageNames;
     }
 

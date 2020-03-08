@@ -7,28 +7,36 @@ import it.unimol.sdkanalyzer.android.Dex2Jar;
 import it.unimol.sdkanalyzer.static_analysis.contexts.AndroidJarContext;
 import it.unimol.sdkanalyzer.static_analysis.contexts.GlobalContext;
 import it.unimol.sdkanalyzer.static_analysis.contexts.JarContext;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
  * @author Simone Scalabrino.
  */
 public class CommonRunner {
-    protected static final String[] PACKAGE_UNDER_ANALYSIS =
-            {
-                    "android",
-                    "java.sql",
-                    "org.apache.http",
-                    "org.json",
-                    "org.w3c.dom",
-                    "org.xml.sax",
-                    "org.xmlpull",
-                    "dalvik",
-                    "com.android"
-            };
+    protected static final Set<String> PACKAGE_UNDER_ANALYSIS;
+
+    static {
+        Set<String> PACKAGE_UNDER_ANALYSIS_TMP = new HashSet<>();
+//        try {
+//            PACKAGE_UNDER_ANALYSIS_TMP = new HashSet<>(Arrays.asList(FileUtils.readFileToString(new File("android-apis.txt"), "UTF-8").split("\n")));
+            PACKAGE_UNDER_ANALYSIS_TMP.add("android.");
+            PACKAGE_UNDER_ANALYSIS_TMP.add("dalvik.");
+            PACKAGE_UNDER_ANALYSIS_TMP.add("com.android");
+            PACKAGE_UNDER_ANALYSIS_TMP.add("com.google");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            System.exit(-1);
+//        }
+
+        PACKAGE_UNDER_ANALYSIS = PACKAGE_UNDER_ANALYSIS_TMP;
+    }
 
     protected File apkFile;
     protected File outputFile;
@@ -58,7 +66,7 @@ public class CommonRunner {
             }
         }
 
-        AndroidJarContext.setAndroidPackageNames(Arrays.asList(PACKAGE_UNDER_ANALYSIS));
+        AndroidJarContext.setAndroidPackageNames(PACKAGE_UNDER_ANALYSIS);
 
         AndroidToolkit.setBuildToolsPath(args[0]);
         AndroidToolkit.setAndroidSDK(args[1]);

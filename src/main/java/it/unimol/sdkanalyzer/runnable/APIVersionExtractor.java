@@ -72,11 +72,20 @@ public class APIVersionExtractor extends CommonRunner {
         IDProvider idProvider = new IDProvider();
         List<APIUsageReport> reports = new ArrayList<>();
         for (IClass iClass : apkContext.getClassesInJar(false)) {
-            ClassContext classContext = apkContext.resolveClassContext(iClass);
-
             // Skip classes belonging to the packages under analysis
-            if (Arrays.stream(PACKAGE_UNDER_ANALYSIS).anyMatch(toSkip -> classContext.getIClass().getName().toString().startsWith(toSkip)))
+            boolean skipClass = false;
+            String className = iClass.getName().toString();
+            for (String packageUnderAnalysis : PACKAGE_UNDER_ANALYSIS) {
+                if (className.startsWith("L" + packageUnderAnalysis.replace('.', '/'))) {
+                    skipClass = true;
+                    break;
+                }
+            }
+            if (skipClass) {
                 continue;
+            }
+
+            ClassContext classContext = apkContext.resolveClassContext(iClass);
 
             for (IMethod iMethod : classContext.getNonAbstractMethods()) {
                 MethodContext methodContext = classContext.resolveMethodContext(iMethod);
@@ -89,7 +98,7 @@ public class APIVersionExtractor extends CommonRunner {
 
                 for (Map.Entry<VersionChecker, SubCFG> entry : versionDependentParts.entrySet()) {
                     IPCFG ipcfg = IPCFG.buildIPCFG(apkContext, entry.getValue());
-                    String calledApis = StringUtils.join(ipcfg.getCalledAPIs(Arrays.asList(PACKAGE_UNDER_ANALYSIS)), "&");
+                    String calledApis = StringUtils.join(ipcfg.getCalledAPIs(PACKAGE_UNDER_ANALYSIS), "&");
 
                     int id = idProvider.getAndIncrement();
 

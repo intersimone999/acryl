@@ -70,7 +70,7 @@ public class IPCFG extends DefaultDirectedGraph<InternalBlock, DefaultEdge> {
         return getCalledAPIs(Collections.singletonList(filter));
     }
 
-    public Collection<String> getCalledAPIs(List<String> filters) {
+    public Collection<String> getCalledAPIs(Collection<String> filters) {
         Set<String> apiCalls = new HashSet<>();
 
         for (InternalBlock internalBlock : this.vertexSet()) {
