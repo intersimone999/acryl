@@ -100,12 +100,6 @@
             <artifactId>javaparser-core</artifactId>
             <version>3.6.10</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.gradle</groupId>
-            <artifactId>gradle-core</artifactId>
-            <version>4.2.1</version>
-        </dependency>
     </dependencies>
 
     <build>
