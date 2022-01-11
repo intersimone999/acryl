@@ -36,14 +36,15 @@ A CSV file containing the ruleset will be created at `/path/to/ruleset.csv`.
 ## Run
 ACRyL detector can be run on the target Android app (APK) to find compatibility issues using the following command:
 ```bash
-java -cp acryl.jar it.unimol.acryl.runnable.Detector /path/to/android-tools/ /path/to/android-sdk/ /path/to/dex2jar /path/to/target-apk.apk /path/to/output-filename.csv /path/to/ruleset.csv {min-confidence} 0 {api-level} 
+java -cp acryl.jar it.unimol.acryl.runnable.Detector /path/to/android-tools/ /path/to/android-sdk/ /path/to/dex2jar /path/to/target-apk.apk /path/to/output-filename.csv /path/to/ruleset.csv /path/to/api_lifetime.txt {min-confidence} 0 {api-level} 
 ```
 
 Where:
 - `/path/to/android-tools/`, `/path/to/android-sdk/`, `/path/to/dex2jar` are the same previously described;
 - `/path/to/target-apk.apk` is the path to the APK of the app on which ACRyL should find compatibility issues;
 - `/path/to/output-filename.csv` is the path to the output file containing the warnings found by ACRyL;
-- `path/to/ruleset.csv` is the path to the ruleset;
+- `/path/to/ruleset.csv` is the path to the ruleset;
+- `/path/to/api_lifetime.txt` is the path to a file (API lifetime) which specifies, for each method signatures, its lifetime; it was built using [CiD](https://github.com/lilicoding/CiD) (e.g.: https://raw.githubusercontent.com/lilicoding/CiD/master/res/android_api_lifetime.txt)
 - `{min-confidence}` is the minimum confidence level for the rules (suggested: 5). The higher this number, the lower the number of warnings.
 - `0`: this argument is there for legacy reasons and it will be ignored, but you need to keep it if you want to specify the other argument;
 - `{api-level}`: optional parameter indicating the target Android API level. Use a numeric value (e.g., 27).
