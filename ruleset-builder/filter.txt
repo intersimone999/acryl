@@ -1,0 +1,4 @@
+^android\.util\.Log\.
+^android\.content\.Context\.getString\(I\)
+^android\.content\.Context\.getSystemService\(Ljava\/lang\/String\;\)
+^java\.lang\.Object\.\<init\>
