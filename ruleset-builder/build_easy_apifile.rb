@@ -21,7 +21,7 @@ Dir.glob(File.join(INFOLDER, "APIs_*.csv")) do |infile|
     CSV.parse(File.read(infile), {headers: true, col_sep: "\t"}) do |row|
         app         = row["app"]
         apival      = row["api"]
-        occurrences = row["occurrences"].to_i
+        occurrences = row["times"].to_i
             
         dataset[apival] = {occurrences: 0, involved_apps: Set.new} unless dataset[apival]
         

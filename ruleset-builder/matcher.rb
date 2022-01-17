@@ -181,7 +181,7 @@ class MatchedCheck
 end
 
 dataset = {}
-CSV.parse(File.read(INFILE), {headers: true, col_sep: ","}) do |row|
+CSV.parse(File.read(INFILE), headers: true, col_sep: ",") do |row|
     check   = row["check"]
     api     = row["apis"]
     app     = row["app"]

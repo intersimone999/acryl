@@ -184,7 +184,7 @@ class RuleDAG < DAG
 end
 
 dags = {}
-CSV.parse(File.read(INFILE), {headers: true, col_sep: ","}) do |row|
+CSV.parse(File.read(INFILE), headers: true, col_sep: ",") do |row|
     comparison  = row["comparison"]
     version     = row["version"]
     true_apis   = row["true_apis"] != ""    ? row["true_apis"].split("&")   : []

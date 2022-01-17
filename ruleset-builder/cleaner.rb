@@ -30,7 +30,7 @@ l_delete    = 0
 
 CSV.open outfile, "w" do |csv|
     csv << %w(id app version sdk_min sdk_trg check method apis apis_number message modified_files)
-    CSV.parse(File.read(infile), {headers: true, col_sep: ","}) do |row|
+    CSV.parse(File.read(infile), headers: true, col_sep: ",") do |row|
         apis = row["apis"].to_s.split("&")
         
         one_deleted = false

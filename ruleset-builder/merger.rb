@@ -19,7 +19,7 @@ CSV.open outfile, "w" do |csv|
     csv << %w(id app version sdk_min sdk_trg check method apis apis_number message modified_files)
     Dir.glob("#{infolder}/*.csv").each do |fname|
         puts "Scanning #{fname}"
-        CSV.parse(File.read(fname), {headers: true, col_sep: "\t", quote_char: '🍔'}) do |row|
+        CSV.parse(File.read(fname), headers: true, col_sep: "\t", quote_char: '🍔') do |row|
             csv << [
                 row["id"], 
                 row["app"],
